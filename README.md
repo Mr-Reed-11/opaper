@@ -2,7 +2,7 @@
 
 Alternativa open source ao Wallpaper Engine, começando por **KDE Plasma 6 / Wayland**.
 
-Neste milestone 1 há uma engine Rust que desenha shaders GLSL em camadas `Background` do layer-shell e uma interface Tauri 2 + Vue 3 para controlar a engine por D-Bus.
+Neste milestone 1 há uma engine Rust que desenha shaders GLSL em camadas `Bottom` do layer-shell (acima do wallpaper do Plasma) e uma interface Tauri 2 + Vue 3 para controlar a engine por D-Bus.
 
 ## Estrutura
 

@@ -133,7 +133,7 @@ impl AppState {
         let layer = self.layer_shell.create_layer_surface(
             &self.qh,
             wl_surface,
-            Layer::Background,
+            Layer::Bottom,
             Some("opaper"),
             Some(&output),
         );

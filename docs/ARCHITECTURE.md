@@ -3,7 +3,7 @@
 ## Fluxo
 
 ```
-app (Vue/Tauri) --invoke--> Rust do app --D-Bus--> engine --wgpu--> layer-shell BACKGROUND
+app (Vue/Tauri) --invoke--> Rust do app --D-Bus--> engine --wgpu--> layer-shell Bottom
 ```
 
 O frontend não renderiza nada e não fala diretamente com a engine. Ele apenas chama comandos Tauri (`list_outputs`, `set_wallpaper`, `pause`, `resume`, `quit`), que usam um proxy zbus blocking para `org.opaper.Engine`.
@@ -11,7 +11,7 @@ O frontend não renderiza nada e não fala diretamente com a engine. Ele apenas 
 ## Engine
 
 - `smithay-client-toolkit` gerencia registry, outputs e layer surfaces.
-- Cada output recebe uma `LayerSurface` em `Layer::Background`, ancorada nos quatro lados.
+- Cada output recebe uma `LayerSurface` em `Layer::Bottom`, ancorada nos quatro lados, para ficar acima do wallpaper do Plasma sem cobrir janelas.
 - Cada output mantém seu próprio pipeline e parâmetros, permitindo wallpapers diferentes por monitor.
 - A `input_region` da surface é vazia: seleção por arraste, clique direito e demais interações passam direto para o desktop.
 - `wgpu` usa um triângulo fullscreen e um fragment shader GLSL 450 compilado via naga.
