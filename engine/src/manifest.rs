@@ -184,6 +184,10 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/nebula-space")
     }
 
+    fn synthwave_dir() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/synthwave-horizon")
+    }
+
     #[test]
     fn parses_bundled_example() {
         let (manifest, shader) = load(&example_dir()).expect("example must be valid");
@@ -211,6 +215,19 @@ mod tests {
         assert_eq!(slots[0][0], 1.0);
         assert_eq!(slots[1][0], 140.0);
         assert_eq!(slots[5][0], 0x08 as f32 / 255.0);
+        assert_eq!(slots[7][2], 1.0);
+    }
+
+    #[test]
+    fn parses_synthwave_example() {
+        let (manifest, shader) = load(&synthwave_dir()).expect("synthwave example must be valid");
+        assert_eq!(manifest.name, "Synthwave Horizon");
+        assert_eq!(manifest.params.len(), 8);
+        assert!(shader.ends_with("shader.frag"));
+
+        let slots = manifest.uniforms().unwrap();
+        assert_eq!(slots[2][0], 0.26);
+        assert_eq!(slots[4][0], 0x16 as f32 / 255.0);
         assert_eq!(slots[7][2], 1.0);
     }
 

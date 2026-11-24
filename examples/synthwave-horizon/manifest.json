@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "Synthwave Horizon",
+  "author": "opaper",
+  "version": "0.1.0",
+  "description": "Pôr do sol neon com grade em perspectiva e estrelas.",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "speed": { "type": "float", "label": "Velocidade", "slot": 0, "default": 0.6, "min": 0.0, "max": 3.0 },
+    "grid_speed": { "type": "float", "label": "Velocidade da grade", "slot": 1, "default": 0.5, "min": 0.0, "max": 2.0 },
+    "sun_size": { "type": "float", "label": "Tamanho do sol", "slot": 2, "default": 0.26, "min": 0.1, "max": 0.5 },
+    "glow": { "type": "float", "label": "Brilho", "slot": 3, "default": 0.9, "min": 0.0, "max": 2.0 },
+    "sky_top": { "type": "color", "label": "Céu superior", "slot": 4, "default": "#160735" },
+    "sky_horizon": { "type": "color", "label": "Horizonte", "slot": 5, "default": "#ff3d81" },
+    "sun": { "type": "color", "label": "Sol", "slot": 6, "default": "#ffd36e" },
+    "grid": { "type": "color", "label": "Grade", "slot": 7, "default": "#2ae4ff" }
+  }
+}

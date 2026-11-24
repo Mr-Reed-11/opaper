@@ -9,7 +9,7 @@ Neste milestone 1 há uma engine Rust que desenha shaders GLSL em camadas `Backg
 - `engine/` — renderer wgpu + layer-shell, parser/validador do manifest e serviço D-Bus.
 - `app/` — interface Tauri 2 + Vue 3 + TypeScript + Tailwind v4 + Lucide.
 - `format/` — schema JSON do formato `opaper` v1.
-- `examples/plasma-waves/`, `examples/nebula-space/` — wallpapers de exemplo.
+- `examples/plasma-waves/`, `examples/nebula-space/`, `examples/synthwave-horizon/` — wallpapers de exemplo.
 - `packaging/` — `.desktop`, ícones e arquivos de empacotamento.
 - `docs/` — arquitetura e roadmap do milestone 2.
 - `identity.json` + `scripts/generate-identity.mjs` — fonte única do identificador `br.com.nortixcode.opaper`.
@@ -54,7 +54,7 @@ Rode a engine com um wallpaper:
 cargo run --manifest-path engine/Cargo.toml -- examples/nebula-space
 ```
 
-Outro exemplo disponível é `examples/plasma-waves`.
+Outros exemplos disponíveis são `examples/plasma-waves` e `examples/synthwave-horizon`.
 
 Em outro terminal, abra a interface:
 
