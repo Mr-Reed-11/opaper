@@ -137,6 +137,7 @@ impl AppState {
         );
         layer.set_anchor(Anchor::TOP | Anchor::LEFT | Anchor::RIGHT | Anchor::BOTTOM);
         layer.set_keyboard_interactivity(KeyboardInteractivity::None);
+        layer.set_exclusive_zone(-1);
         layer.set_size(width, height);
         layer.commit();
 
