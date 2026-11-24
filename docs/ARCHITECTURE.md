@@ -13,6 +13,7 @@ O frontend não renderiza nada e não fala diretamente com a engine. Ele apenas 
 - `smithay-client-toolkit` gerencia registry, outputs e layer surfaces.
 - Cada output recebe uma `LayerSurface` em `Layer::Background`, ancorada nos quatro lados.
 - Cada output mantém seu próprio pipeline e parâmetros, permitindo wallpapers diferentes por monitor.
+- A `input_region` da surface é vazia: seleção por arraste, clique direito e demais interações passam direto para o desktop.
 - `wgpu` usa um triângulo fullscreen e um fragment shader GLSL 450 compilado via naga.
 - `Globals` é um uniform buffer com tempo, frame, resolução e até 8 parâmetros.
 - `calloop` integra eventos Wayland, canal de comandos e sinais SIGTERM/SIGINT.

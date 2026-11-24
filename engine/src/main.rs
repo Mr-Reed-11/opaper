@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use bytemuck::{Pod, Zeroable};
 use smithay_client_toolkit::{
-    compositor::{CompositorHandler, CompositorState, FrameCallbackData},
+    compositor::{CompositorHandler, CompositorState, FrameCallbackData, Region},
     delegate_registry,
     output::{OutputHandler, OutputState},
     registry::{ProvidesRegistryState, RegistryState},
@@ -77,6 +77,7 @@ struct AppState {
     registry_state: RegistryState,
     output_state: OutputState,
     compositor: CompositorState,
+    empty_input_region: Region,
     layer_shell: LayerShell,
     qh: QueueHandle<AppState>,
     loop_signal: LoopSignal,
@@ -128,6 +129,7 @@ impl AppState {
         }
         let (width, height) = output_size(&self.output_state, &output);
         let wl_surface = self.compositor.create_surface(&self.qh);
+        wl_surface.set_input_region(Some(self.empty_input_region.wl_region()));
         let layer = self.layer_shell.create_layer_surface(
             &self.qh,
             wl_surface,
@@ -525,6 +527,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let compositor = CompositorState::bind(&globals, &qh)?;
     let layer_shell = LayerShell::bind(&globals, &qh)?;
     let output_state = OutputState::new(&globals, &qh);
+    let empty_input_region = Region::new(&compositor)?;
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))?;
@@ -581,6 +584,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         registry_state: RegistryState::new(&globals),
         output_state,
         compositor,
+        empty_input_region,
         qh: qh.clone(),
         loop_signal: loop_signal.clone(),
         instance,
