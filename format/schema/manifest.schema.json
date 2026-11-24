@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opaper.local/schema/manifest-v1.json",
+  "title": "opaper wallpaper manifest (v1)",
+  "type": "object",
+  "required": ["schema_version", "name", "author", "version", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "author": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "type": { "enum": ["shader", "scene"] },
+    "shader": { "type": "string", "minLength": 1 },
+    "params": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/param" }
+    },
+    "layers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/layer" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "shader" } }, "required": ["type"] },
+      "then": { "required": ["shader"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "scene" } }, "required": ["type"] },
+      "then": { "required": ["layers"], "properties": { "layers": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "param": {
+      "type": "object",
+      "required": ["type", "default"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["float", "color"] },
+        "label": { "type": "string" },
+        "default": { "type": ["number", "string"] },
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": ["image"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "image": { "type": "string", "minLength": 1 },
+        "mask": { "type": "string" },
+        "depth": { "type": "string" },
+        "flow": { "type": "string" },
+        "effects": { "$ref": "#/$defs/effects" }
+      }
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parallax": {
+          "type": "object",
+          "required": ["intensity"],
+          "additionalProperties": false,
+          "properties": {
+            "intensity": { "type": "number" },
+            "smoothing": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "sway": {
+          "type": "object",
+          "required": ["amplitude"],
+          "additionalProperties": false,
+          "properties": {
+            "amplitude": { "type": "number" },
+            "speed": { "type": "number" },
+            "direction": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+          }
+        },
+        "particles": {
+          "type": "object",
+          "required": ["count"],
+          "additionalProperties": false,
+          "properties": {
+            "count": { "type": "integer", "minimum": 0 },
+            "texture": { "type": "string" },
+            "speed": { "type": "number" }
+          }
+        },
+        "bloom": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "threshold": { "type": "number" },
+            "intensity": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}
