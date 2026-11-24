@@ -17,6 +17,10 @@ float hash21(vec2 p) {
     return fract(p.x * p.y);
 }
 
+float rand1(float n) {
+    return fract(sin(n * 12.9898) * 43758.5453);
+}
+
 float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -39,18 +43,38 @@ float fbm(vec2 p) {
     return value;
 }
 
-vec3 comet(vec2 uv, float t, float seed, vec3 tint) {
-    float cycle = fract(t + seed);
-    vec2 head = mix(vec2(1.9, 1.25), vec2(-0.5, -0.3), cycle);
-    vec2 motion = normalize(vec2(-0.85, -0.52));
-    vec2 side = vec2(-motion.y, motion.x);
-    vec2 rel = uv - head;
-    float along = dot(rel, -motion);
-    float across = abs(dot(rel, side));
-    float core = exp(-length(rel) * 26.0);
-    float tail = exp(-across * 46.0) * exp(-along * 5.5) * step(0.0, along);
-    float fade = sin(cycle * 3.14159265);
-    return tint * (core * 1.8 + tail * 0.75) * fade;
+vec2 comet_position(float phase, float seed, float aspect) {
+    float angle = rand1(seed + 1.0) * 6.2831853;
+    vec2 dir = vec2(cos(angle), sin(angle));
+    vec2 side = vec2(-dir.y, dir.x);
+    vec2 start = vec2(
+        mix(-0.8, aspect + 0.8, rand1(seed + 2.0)),
+        mix(-0.4, 1.6, rand1(seed + 3.0))
+    );
+    float travel = mix(2.4, 4.2, rand1(seed + 4.0));
+    float curl = (rand1(seed + 5.0) - 0.5) * 0.9;
+    return start + dir * travel * phase + side * curl * sin(phase * 3.14159265);
+}
+
+vec3 comet(vec2 uv, float t, float seed, vec3 tint, float aspect) {
+    float speed = mix(0.045, 0.14, rand1(seed + 6.0));
+    float phase = fract(t * speed + rand1(seed + 7.0));
+    vec2 head = comet_position(phase, seed, aspect);
+    vec3 glow = vec3(0.0);
+
+    for (int i = 0; i < 12; i++) {
+        float f = float(i) / 11.0;
+        float past = phase - f * 0.085;
+        float valid = step(0.0, past);
+        vec2 p = comet_position(max(past, 0.0), seed, aspect);
+        float width = mix(52.0, 13.0, f);
+        float strength = (1.0 - f) * (1.0 - f) * 0.11 * valid;
+        glow += tint * exp(-length(uv - p) * width) * strength;
+    }
+
+    glow += tint * exp(-length(uv - head) * 42.0) * 1.5;
+    float fade = smoothstep(0.0, 0.06, phase) * (1.0 - smoothstep(0.90, 1.0, phase));
+    return glow * fade;
 }
 
 void main() {
@@ -86,13 +110,16 @@ void main() {
     vec2 jitter = vec2(hash21(cell + 1.7), hash21(cell + 8.3)) - 0.5;
     float dist = length(local - jitter * 0.65);
     float radius = mix(0.025, 0.06, hash21(cell + 4.1));
-    float star = present * smoothstep(radius, 0.0, dist);
+    float star = present * (1.0 - smoothstep(0.0, radius, dist));
     float twinkle = 0.55 + 0.45 * sin(iTime * 2.4 + h * 42.0);
     color += vec3(0.85, 0.9, 1.0) * star * twinkle;
 
-    color += comet(uv, iTime * cometSpeed, 0.0, cyan);
-    color += comet(uv, iTime * cometSpeed, 0.37, mix(violet, vec3(1.0), 0.35));
-    color += comet(uv, iTime * cometSpeed, 0.71, vec3(1.0, 0.78, 0.86));
+    float cometTime = iTime * (0.5 + cometSpeed * 6.0);
+    color += comet(uv, cometTime, 11.0, cyan, aspect);
+    color += comet(uv, cometTime, 29.0, mix(violet, vec3(1.0), 0.35), aspect);
+    color += comet(uv, cometTime, 47.0, vec3(1.0, 0.78, 0.86), aspect);
+    color += comet(uv, cometTime, 83.0, vec3(0.65, 0.9, 1.0), aspect);
+    color += comet(uv, cometTime, 101.0, mix(cyan, vec3(1.0), 0.4), aspect);
 
     float vignette = 1.0 - smoothstep(0.45, 1.15, length(uv - vec2(aspect * 0.5, 0.5)));
     color *= mix(0.55, 1.0, vignette);
