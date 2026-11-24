@@ -39,4 +39,4 @@ Fechar a janela com o botão de fechar chama `prevent_close()` e esconde a janel
 
 ## Ícones
 
-A API de tray do Tauri 2 aceita ICO/PNG, não SVG nem nomes de ícones simbólicos. Por isso a fonte vetorial será convertida para um PNG monocromático antes de ser usada no tray. Os ícones atuais são provisórios.
+A API de tray do Tauri 2 aceita ICO/PNG, não SVG nem nomes de ícones simbólicos. Os ícones do app são gerados a partir da arte final em `packaging/icons/opaper-1024.png`; o tray usa uma versão monocromática em PNG derivada da mesma arte.

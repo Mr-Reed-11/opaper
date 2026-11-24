@@ -113,7 +113,7 @@ Cada parâmetro do manifest deve declarar `slot` de `0` a `7`. Valores `float` o
 - Somente wallpapers do tipo `shader`; `scene` está no schema para o M2, mas ainda é rejeitado na carga.
 - Sem áudio, vídeo, páginas web, loja/workshop ou download da comunidade.
 - Até 8 parâmetros por wallpaper.
-- Ícones atuais são provisórios; a arte final ainda será integrada.
+- Ícones gerados a partir da arte final fornecida para `opaper`; o tray usa uma versão monocromática em PNG.
 - A engine precisa estar rodando antes de usar os comandos da interface.
 
 Veja `docs/ARCHITECTURE.md` e `docs/M2.md` para detalhes.
