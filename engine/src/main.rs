@@ -36,10 +36,8 @@ use smithay_client_toolkit::{
 };
 use zbus::{fdo, interface, blocking::Connection as DbusConnection};
 
-use manifest::ManifestError;
+use manifest::{MAX_PARAMS, ManifestError};
 use shader::DEFAULT_FRAGMENT;
-
-const MAX_PARAMS: usize = 8;
 const IDLE_TICK: Duration = Duration::from_millis(250);
 
 #[repr(C)]
@@ -263,11 +261,7 @@ impl AppState {
             self.format,
         );
         self.pipeline = pipeline;
-        let mut params = [[0.0; 4]; MAX_PARAMS];
-        for (slot, param) in loaded.params.values().take(MAX_PARAMS).enumerate() {
-            params[slot] = param.as_uniform().unwrap_or_default();
-        }
-        self.params = params;
+        self.params = loaded.uniforms().map_err(|e| format!("invalid params: {e}"))?;
         Ok(())
     }
 }

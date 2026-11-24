@@ -35,10 +35,11 @@
   "$defs": {
     "param": {
       "type": "object",
-      "required": ["type", "default"],
+      "required": ["type", "default", "slot"],
       "additionalProperties": false,
       "properties": {
         "type": { "enum": ["float", "color"] },
+        "slot": { "type": "integer", "minimum": 0, "maximum": 7 },
         "label": { "type": "string" },
         "default": { "type": ["number", "string"] },
         "min": { "type": "number" },

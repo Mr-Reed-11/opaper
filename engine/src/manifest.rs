@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 
 const SCHEMA_JSON: &str = include_str!("../../format/schema/manifest.schema.json");
 
+pub const MAX_PARAMS: usize = 8;
+
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum WallpaperKind {
@@ -39,6 +41,7 @@ pub struct Layer {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct Param {
     pub r#type: String,
+    pub slot: u8,
     pub default: serde_json::Value,
     #[serde(default)]
     pub label: Option<String>,
@@ -95,6 +98,25 @@ pub struct Manifest {
     pub kind: WallpaperKind,
 }
 
+impl Manifest {
+    /// Packs params into `iParams` using the explicit slots from the manifest.
+    pub fn uniforms(&self) -> Result<[[f32; 4]; MAX_PARAMS], String> {
+        let mut out = [[0.0; 4]; MAX_PARAMS];
+        let mut used = [false; MAX_PARAMS];
+        for (name, param) in &self.params {
+            let slot = param.slot as usize;
+            if used[slot] {
+                return Err(format!("duplicate param slot {slot} (param '{name}')"));
+            }
+            used[slot] = true;
+            out[slot] = param
+                .as_uniform()
+                .map_err(|e| format!("param '{name}': {e}"))?;
+        }
+        Ok(out)
+    }
+}
+
 #[derive(Debug)]
 pub struct ManifestError(pub String);
 
@@ -133,12 +155,9 @@ pub fn load(dir: &Path) -> Result<(Manifest, PathBuf), ManifestError> {
 
     let manifest: Manifest = serde_json::from_value(value)
         .map_err(|e| ManifestError(format!("cannot parse manifest: {e}")))?;
-    if manifest.params.len() > 8 {
-        return Err(ManifestError("at most 8 params are supported in v1".to_owned()));
-    }
-    for (name, param) in &manifest.params {
-        param.as_uniform().map_err(|e| ManifestError(format!("param '{name}': {e}")))?;
-    }
+    manifest
+        .uniforms()
+        .map_err(|e| ManifestError(format!("invalid params: {e}")))?;
 
     let shader_path = match &manifest.kind {
         WallpaperKind::Shader { shader } => dir.join(shader),
@@ -169,6 +188,12 @@ mod tests {
         assert!(shader.ends_with("shader.frag"));
         assert_eq!(manifest.params["speed"].as_uniform().unwrap()[0], 0.6);
         assert_eq!(manifest.params["color_b"].as_uniform().unwrap()[2], 1.0);
+
+        let slots = manifest.uniforms().unwrap();
+        assert_eq!(slots[0][0], 0.6);
+        assert_eq!(slots[1][0], 4.0);
+        assert_eq!(slots[2][0], 0x13 as f32 / 255.0);
+        assert_eq!(slots[3][2], 1.0);
     }
 
     #[test]
