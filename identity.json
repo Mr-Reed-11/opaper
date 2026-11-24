@@ -1,0 +1,7 @@
+{
+  "name": "opaper",
+  "comment": "Wallpapers animados para KDE Plasma",
+  "identifier": "br.com.nortixcode.opaper",
+  "engineBusName": "org.opaper.Engine",
+  "engineObjectPath": "/org/opaper/Engine"
+}
