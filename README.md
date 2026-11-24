@@ -71,27 +71,34 @@ Also install the Tauri CLI:
 cargo install tauri-cli --version '^2' --locked
 ```
 
-### Build
+### Install (Arch / CachyOS)
 
 ```sh
-# Engine
+cd packaging && makepkg -si
+```
+
+This installs opaper system-wide with a desktop entry and icon. Launch it from your app menu or run `opaper-launch`.
+
+### Install (any distro)
+
+```sh
+make
+sudo make install
+```
+
+To uninstall: `sudo make uninstall`
+
+### Run without installing
+
+```sh
+# Build
 cargo build --manifest-path engine/Cargo.toml
-
-# Frontend
 cd app && npm install && npm run build && cd ..
-```
 
-### Run
-
-**Terminal 1** — start the engine with a wallpaper:
-
-```sh
+# Terminal 1 — engine
 cargo run --manifest-path engine/Cargo.toml -- examples/nebula-space
-```
 
-**Terminal 2** — open the GUI:
-
-```sh
+# Terminal 2 — GUI
 cd app && npm run tauri dev
 ```
 
