@@ -187,6 +187,8 @@ impl AppState {
             return;
         }
 
+        item.layer.wl_surface().frame(&self.qh, FrameCallbackData(item.layer.wl_surface().clone()));
+
         let now = Instant::now();
         let delta = now.duration_since(self.last_frame);
         self.last_frame = now;
@@ -205,10 +207,7 @@ impl AppState {
         let texture = match item.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(texture)
             | wgpu::CurrentSurfaceTexture::Suboptimal(texture) => texture,
-            _ => {
-                item.layer.wl_surface().frame(&self.qh, FrameCallbackData(item.layer.wl_surface().clone()));
-                return;
-            }
+            _ => return,
         };
         let view = texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self.device.create_command_encoder(&Default::default());
@@ -237,7 +236,6 @@ impl AppState {
         }
         self.queue.submit(Some(encoder.finish()));
         self.queue.present(texture);
-        item.layer.wl_surface().frame(&self.qh, FrameCallbackData(item.layer.wl_surface().clone()));
     }
 
     fn set_wallpaper(&mut self, path: &Path) -> Result<(), String> {
@@ -440,8 +438,7 @@ impl LayerShellHandler for AppState {
             self.configure_surface_at(surface, width, height);
         }
         if !self.paused {
-            let surface = layer.wl_surface();
-            surface.frame(&self.qh, FrameCallbackData(surface.clone()));
+            self.draw(layer.wl_surface());
         }
     }
 }
