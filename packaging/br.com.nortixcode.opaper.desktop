@@ -2,9 +2,11 @@
 Type=Application
 Version=1.0
 Name=opaper
-Comment=Wallpapers animados para KDE Plasma
-Exec=opaper
+GenericName=Animated Wallpaper Engine
+Comment=Animated shader wallpapers for Linux / Wayland
+Exec=opaper-launch
 Icon=opaper
 Terminal=false
-Categories=Graphics;2DGraphics;
+Categories=Graphics;2DGraphics;Utility;
 StartupWMClass=opaper
+Keywords=wallpaper;animated;shader;desktop;

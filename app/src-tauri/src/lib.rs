@@ -104,15 +104,26 @@ fn scan_wallpaper_dir(dir: &Path) -> Vec<WallpaperInfo> {
 
 #[tauri::command]
 fn list_wallpapers() -> Vec<WallpaperInfo> {
-    let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
-    let mut all = scan_wallpaper_dir(&examples);
+    let mut all = Vec::new();
 
+    // System-wide examples (installed)
+    all.extend(scan_wallpaper_dir(Path::new("/usr/share/opaper/examples")));
+
+    // Dev / build-time examples
+    let dev_examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
+    if dev_examples.is_dir() {
+        all.extend(scan_wallpaper_dir(&dev_examples));
+    }
+
+    // User wallpapers
     let home = std::env::var("HOME").unwrap_or_default();
     let xdg = std::env::var("XDG_DATA_HOME")
         .unwrap_or_else(|_| format!("{home}/.local/share"));
-    let user_dir = Path::new(&xdg).join("opaper/wallpapers");
-    all.extend(scan_wallpaper_dir(&user_dir));
+    all.extend(scan_wallpaper_dir(&Path::new(&xdg).join("opaper/wallpapers")));
 
+    // Deduplicate by name
+    all.sort_by(|a, b| a.name.cmp(&b.name));
+    all.dedup_by(|a, b| a.name == b.name);
     all
 }
 

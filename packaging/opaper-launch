@@ -1,0 +1,13 @@
+#!/bin/sh
+# Start the opaper engine in the background (if not already running),
+# then open the GUI.
+
+if ! gdbus introspect --session \
+    --dest org.opaper.Engine \
+    --object-path /org/opaper/Engine >/dev/null 2>&1; then
+    opaper-engine &
+    # Give the engine a moment to register on D-Bus
+    sleep 0.3
+fi
+
+exec opaper

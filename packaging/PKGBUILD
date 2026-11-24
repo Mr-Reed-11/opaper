@@ -1,0 +1,42 @@
+# Maintainer: Vítor Ornelas
+pkgname=opaper
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Animated shader wallpapers for Linux / Wayland"
+arch=('x86_64')
+url="https://github.com/Mr-Reed-11/opaper"
+license=('MIT')
+depends=(
+    'wayland'
+    'libxkbcommon'
+    'dbus'
+    'webkit2gtk-4.1'
+    'libayatana-appindicator'
+    'vulkan-icd-loader'
+)
+makedepends=(
+    'rust'
+    'cargo'
+    'nodejs'
+    'npm'
+    'pkg-config'
+    'wayland-protocols'
+)
+optdepends=(
+    'qt6-shadertools: KDE Plasma wallpaper plugin (qsb compiler)'
+)
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    export CARGO_TARGET_DIR=target
+    cargo build --release --manifest-path engine/Cargo.toml
+    cd app && npm install && npm run build && cd ..
+    cargo build --release --manifest-path app/src-tauri/Cargo.toml
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make install DESTDIR="$pkgdir" PREFIX=/usr
+}
