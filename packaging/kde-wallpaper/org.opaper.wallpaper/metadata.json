@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Id": "org.opaper.wallpaper",
+        "Name": "opaper",
+        "Description": "Animated shader wallpapers",
+        "Icon": "preferences-desktop-wallpaper",
+        "Version": "0.1.0",
+        "Authors": [{ "Name": "opaper" }]
+    }
+}

@@ -100,6 +100,7 @@ struct AppState {
     frame: u32,
     paused: bool,
     running: bool,
+    plasma_plugin: bool,
 }
 
 fn output_name(output_state: &OutputState, output: &wl_output::WlOutput) -> String {
@@ -124,7 +125,7 @@ fn output_size(output_state: &OutputState, output: &wl_output::WlOutput) -> (u32
 
 impl AppState {
     fn add_output(&mut self, conn: &Connection, output: wl_output::WlOutput) {
-        if self.surfaces.iter().any(|s| s.output == output) {
+        if self.plasma_plugin || self.surfaces.iter().any(|s| s.output == output) {
             return;
         }
         let (width, height) = output_size(&self.output_state, &output);
@@ -290,6 +291,15 @@ impl AppState {
                 }
                 self.pipeline = pipeline;
                 self.params = params;
+
+                if plasma::is_running() && plasma::plugin_installed() {
+                    let name = path.file_name().unwrap_or_default().to_string_lossy();
+                    let abs = std::fs::canonicalize(path)
+                        .unwrap_or_else(|_| path.to_path_buf())
+                        .to_string_lossy()
+                        .to_string();
+                    plasma::activate_opaper(&name, &abs, &params);
+                }
             }
         }
         Ok(())
@@ -518,6 +528,79 @@ impl ProvidesRegistryState for AppState {
 delegate_registry!(AppState);
 smithay_client_toolkit::delegate_dispatch2!(AppState);
 
+mod plasma {
+    use std::process::Command as Cmd;
+
+    fn eval(script: &str) -> Option<String> {
+        let output = Cmd::new("qdbus6")
+            .args([
+                "org.kde.plasmashell",
+                "/PlasmaShell",
+                "org.kde.PlasmaShell.evaluateScript",
+                script,
+            ])
+            .output()
+            .ok()?;
+        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if output.status.success() && !text.is_empty() { Some(text) } else { None }
+    }
+
+    pub fn is_running() -> bool {
+        Cmd::new("qdbus6")
+            .args(["org.kde.plasmashell", "/PlasmaShell"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    pub fn get_wallpaper_plugin() -> Option<String> {
+        eval("var d = desktops(); if (d.length > 0) print(d[0].wallpaperPlugin);")
+    }
+
+    pub fn set_wallpaper_plugin(plugin: &str) {
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 d[i].wallpaperPlugin = '{plugin}'; \
+             }}"
+        );
+        eval(&script);
+    }
+
+    pub fn activate_opaper(shader_name: &str, wallpaper_path: &str, params: &[[f32; 4]; 8]) {
+        let params_json = format!(
+            "[[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}]]",
+            params[0][0], params[0][1], params[0][2], params[0][3],
+            params[1][0], params[1][1], params[1][2], params[1][3],
+            params[2][0], params[2][1], params[2][2], params[2][3],
+            params[3][0], params[3][1], params[3][2], params[3][3],
+            params[4][0], params[4][1], params[4][2], params[4][3],
+            params[5][0], params[5][1], params[5][2], params[5][3],
+            params[6][0], params[6][1], params[6][2], params[6][3],
+            params[7][0], params[7][1], params[7][2], params[7][3],
+        );
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 d[i].wallpaperPlugin = 'org.opaper.wallpaper'; \
+                 d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                 d[i].writeConfig('ShaderName', '{shader_name}'); \
+                 d[i].writeConfig('WallpaperPath', '{wallpaper_path}'); \
+                 d[i].writeConfig('Params', '{params_json}'); \
+             }}"
+        );
+        eval(&script);
+    }
+
+    pub fn plugin_installed() -> bool {
+        let home = std::env::var("HOME").unwrap_or_default();
+        std::path::Path::new(&format!(
+            "{home}/.local/share/plasma/wallpapers/org.opaper.wallpaper/metadata.json"
+        ))
+        .exists()
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let wallpaper = std::env::args().nth(1).map(PathBuf::from);
 
@@ -604,6 +687,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         frame: 0,
         paused: false,
         running: true,
+        plasma_plugin: false,
     };
 
     WaylandSource::new(conn.clone(), event_queue).insert(event_loop.handle())?;
@@ -620,12 +704,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     )?;
 
+    let use_plasma_plugin = plasma::is_running() && plasma::plugin_installed();
+    state.plasma_plugin = use_plasma_plugin;
+    let plasma_original = if plasma::is_running() {
+        plasma::get_wallpaper_plugin()
+    } else {
+        None
+    };
+
     if let Some(path) = wallpaper {
         state.set_wallpaper(&path, None)?;
     }
-    let outputs: Vec<wl_output::WlOutput> = state.output_state.outputs().collect();
-    for output in outputs {
-        state.add_output(&conn, output);
+    if !use_plasma_plugin {
+        let outputs: Vec<wl_output::WlOutput> = state.output_state.outputs().collect();
+        for output in outputs {
+            state.add_output(&conn, output);
+        }
     }
 
     let dbus = DbusConnection::session()?;
@@ -644,5 +738,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         drop(item.surface);
         drop(item.layer);
     }
+
+    if let Some(ref plugin) = plasma_original {
+        plasma::set_wallpaper_plugin(plugin);
+    }
+
     Ok(())
 }

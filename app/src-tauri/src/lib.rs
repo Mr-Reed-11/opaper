@@ -1,8 +1,10 @@
+use std::path::Path;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
 
+use serde::Serialize;
 use tauri::{
     AppHandle, Manager, WindowEvent,
     image::Image,
@@ -54,6 +56,66 @@ fn resume() -> Result<(), String> {
     with_engine(|engine| engine.resume())
 }
 
+#[derive(Serialize, Clone)]
+struct WallpaperInfo {
+    name: String,
+    description: String,
+    author: String,
+    path: String,
+    colors: Vec<String>,
+}
+
+fn scan_wallpaper_dir(dir: &Path) -> Vec<WallpaperInfo> {
+    let mut wallpapers = Vec::new();
+    let Ok(entries) = std::fs::read_dir(dir) else { return wallpapers };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let manifest_path = path.join("manifest.json");
+        if !manifest_path.is_file() { continue; }
+        let Ok(raw) = std::fs::read_to_string(&manifest_path) else { continue };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) else { continue };
+
+        let name = value["name"].as_str().unwrap_or("").to_string();
+        let description = value["description"].as_str().unwrap_or("").to_string();
+        let author = value["author"].as_str().unwrap_or("").to_string();
+
+        let mut colors = Vec::new();
+        if let Some(params) = value["params"].as_object() {
+            for (_, param) in params {
+                if param["type"].as_str() == Some("color") {
+                    if let Some(c) = param["default"].as_str() {
+                        colors.push(c.to_string());
+                    }
+                }
+            }
+        }
+
+        wallpapers.push(WallpaperInfo {
+            name,
+            description,
+            author,
+            path: path.to_string_lossy().to_string(),
+            colors,
+        });
+    }
+    wallpapers.sort_by(|a, b| a.name.cmp(&b.name));
+    wallpapers
+}
+
+#[tauri::command]
+fn list_wallpapers() -> Vec<WallpaperInfo> {
+    let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
+    let mut all = scan_wallpaper_dir(&examples);
+
+    let home = std::env::var("HOME").unwrap_or_default();
+    let xdg = std::env::var("XDG_DATA_HOME")
+        .unwrap_or_else(|_| format!("{home}/.local/share"));
+    let user_dir = Path::new(&xdg).join("opaper/wallpapers");
+    all.extend(scan_wallpaper_dir(&user_dir));
+
+    all
+}
+
 fn stop_engine() {
     let _ = with_engine(|engine| engine.quit());
 }
@@ -68,6 +130,7 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             list_outputs,
+            list_wallpapers,
             set_wallpaper,
             pause,
             resume,

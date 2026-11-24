@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "Fireflies",
+  "author": "opaper",
+  "version": "0.1.0",
+  "description": "Noite na floresta com vagalumes brilhantes flutuando.",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "speed": { "type": "float", "label": "Velocidade", "slot": 0, "default": 0.5, "min": 0.0, "max": 2.0 },
+    "firefly_count": { "type": "float", "label": "Vagalumes", "slot": 1, "default": 30.0, "min": 5.0, "max": 60.0 },
+    "glow_size": { "type": "float", "label": "Tamanho do brilho", "slot": 2, "default": 1.0, "min": 0.3, "max": 3.0 },
+    "fog": { "type": "float", "label": "Neblina", "slot": 3, "default": 0.5, "min": 0.0, "max": 1.0 },
+    "sky_color": { "type": "color", "label": "Ceu", "slot": 4, "default": "#050a15" },
+    "ground_color": { "type": "color", "label": "Chao", "slot": 5, "default": "#0a1a0a" },
+    "firefly_warm": { "type": "color", "label": "Vagalume quente", "slot": 6, "default": "#ffdd44" },
+    "firefly_cool": { "type": "color", "label": "Vagalume frio", "slot": 7, "default": "#88ff66" }
+  }
+}

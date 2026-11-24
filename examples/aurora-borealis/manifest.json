@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "Aurora Borealis",
+  "author": "opaper",
+  "version": "0.1.0",
+  "description": "Aurora boreal animada com cortinas de luz ondulantes.",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "speed": { "type": "float", "label": "Velocidade", "slot": 0, "default": 0.4, "min": 0.0, "max": 2.0 },
+    "intensity": { "type": "float", "label": "Intensidade", "slot": 1, "default": 1.0, "min": 0.0, "max": 2.0 },
+    "curtain_scale": { "type": "float", "label": "Escala das cortinas", "slot": 2, "default": 3.0, "min": 1.0, "max": 8.0 },
+    "star_density": { "type": "float", "label": "Densidade de estrelas", "slot": 3, "default": 150.0, "min": 40.0, "max": 300.0 },
+    "sky_dark": { "type": "color", "label": "Ceu escuro", "slot": 4, "default": "#020810" },
+    "sky_horizon": { "type": "color", "label": "Horizonte", "slot": 5, "default": "#0a1628" },
+    "aurora_green": { "type": "color", "label": "Aurora verde", "slot": 6, "default": "#30ff90" },
+    "aurora_purple": { "type": "color", "label": "Aurora roxa", "slot": 7, "default": "#8040ff" }
+  }
+}

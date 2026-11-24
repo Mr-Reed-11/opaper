@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "Lava Lamp",
+  "author": "opaper",
+  "version": "0.1.0",
+  "description": "Lampada de lava retro com blobs fluidos coloridos.",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "speed": { "type": "float", "label": "Velocidade", "slot": 0, "default": 0.4, "min": 0.0, "max": 2.0 },
+    "blob_count": { "type": "float", "label": "Quantidade de blobs", "slot": 1, "default": 6.0, "min": 3.0, "max": 12.0 },
+    "smoothness": { "type": "float", "label": "Suavidade", "slot": 2, "default": 0.6, "min": 0.1, "max": 1.5 },
+    "glow": { "type": "float", "label": "Brilho", "slot": 3, "default": 1.0, "min": 0.0, "max": 2.0 },
+    "bg_color": { "type": "color", "label": "Fundo", "slot": 4, "default": "#0a0015" },
+    "blob_color_a": { "type": "color", "label": "Cor A", "slot": 5, "default": "#ff2060" },
+    "blob_color_b": { "type": "color", "label": "Cor B", "slot": 6, "default": "#ff8020" },
+    "blob_color_c": { "type": "color", "label": "Cor C", "slot": 7, "default": "#ff40a0" }
+  }
+}
