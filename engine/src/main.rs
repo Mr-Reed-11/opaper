@@ -54,6 +54,7 @@ struct Globals {
 enum Command {
     SetWallpaper {
         path: PathBuf,
+        output: Option<String>,
         reply: std::sync::mpsc::Sender<Result<(), String>>,
     },
     Pause,
@@ -68,6 +69,8 @@ struct OutputSurface {
     width: u32,
     height: u32,
     configured: bool,
+    pipeline: Option<wgpu::RenderPipeline>,
+    params: [[f32; 4]; MAX_PARAMS],
 }
 
 struct AppState {
@@ -163,6 +166,8 @@ impl AppState {
             width,
             height,
             configured: false,
+            pipeline: None,
+            params: [[0.0; 4]; MAX_PARAMS],
         });
         self.sync_outputs();
     }
@@ -199,7 +204,7 @@ impl AppState {
             i_frame: self.frame,
             pad: 0.0,
             i_resolution: [item.width as f32, item.height as f32, 1.0, 0.0],
-            i_params: self.params,
+            i_params: if item.pipeline.is_some() { item.params } else { self.params },
         };
         self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&globals));
         self.frame = self.frame.wrapping_add(1);
@@ -229,7 +234,7 @@ impl AppState {
                 multiview_mask: None,
             });
             if !self.paused {
-                pass.set_pipeline(&self.pipeline);
+                pass.set_pipeline(item.pipeline.as_ref().unwrap_or(&self.pipeline));
                 pass.set_bind_group(0, &self.bind_group, &[]);
                 pass.draw(0..3, 0..1);
             }
@@ -238,7 +243,7 @@ impl AppState {
         self.queue.present(texture);
     }
 
-    fn set_wallpaper(&mut self, path: &Path) -> Result<(), String> {
+    fn set_wallpaper(&mut self, path: &Path, output: Option<&str>) -> Result<(), String> {
         let (loaded, shader_path) = manifest::load(path).map_err(|e: ManifestError| e.to_string())?;
         let source = std::fs::read_to_string(&shader_path)
             .map_err(|e| format!("cannot read shader: {e}"))?;
@@ -258,8 +263,32 @@ impl AppState {
             &self.bind_group_layout,
             self.format,
         );
-        self.pipeline = pipeline;
-        self.params = loaded.uniforms().map_err(|e| format!("invalid params: {e}"))?;
+        let params = loaded.uniforms().map_err(|e| format!("invalid params: {e}"))?;
+
+        match output {
+            Some(name) => {
+                let available: Vec<String> = self
+                    .surfaces
+                    .iter()
+                    .map(|surface| output_name(&self.output_state, &surface.output))
+                    .collect();
+                let surface = self
+                    .surfaces
+                    .iter_mut()
+                    .find(|surface| output_name(&self.output_state, &surface.output) == name)
+                    .ok_or_else(|| format!("output not found: {name} (available: {})", available.join(", ")))?;
+                surface.pipeline = Some(pipeline);
+                surface.params = params;
+            }
+            None => {
+                for surface in &mut self.surfaces {
+                    surface.pipeline = Some(pipeline.clone());
+                    surface.params = params;
+                }
+                self.pipeline = pipeline;
+                self.params = params;
+            }
+        }
         Ok(())
     }
 }
@@ -311,9 +340,17 @@ struct EngineIface {
 #[interface(name = "org.opaper.Engine")]
 impl EngineIface {
     fn set_wallpaper(&self, path: &str) -> fdo::Result<()> {
+        self.set_wallpaper_on_output(path, "")
+    }
+
+    fn set_wallpaper_on_output(&self, path: &str, output: &str) -> fdo::Result<()> {
         let (tx, rx) = reply_channel();
         self.commands
-            .send(Command::SetWallpaper { path: PathBuf::from(path), reply: tx })
+            .send(Command::SetWallpaper {
+                path: PathBuf::from(path),
+                output: if output.is_empty() { None } else { Some(output.to_owned()) },
+                reply: tx,
+            })
             .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))?;
         rx.recv_timeout(Duration::from_secs(10))
             .map_err(|_| fdo::Error::Timeout("wallpaper load timed out".to_owned()))?
@@ -339,8 +376,8 @@ impl EngineIface {
 
 fn handle_command(state: &mut AppState, command: Command) {
     match command {
-        Command::SetWallpaper { path, reply } => {
-            let result = state.set_wallpaper(&path);
+        Command::SetWallpaper { path, output, reply } => {
+            let result = state.set_wallpaper(&path, output.as_deref());
             let _ = reply.send(result);
         }
         Command::Pause => state.paused = true,
@@ -579,7 +616,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     if let Some(path) = wallpaper {
-        state.set_wallpaper(&path)?;
+        state.set_wallpaper(&path, None)?;
     }
     let outputs: Vec<wl_output::WlOutput> = state.output_state.outputs().collect();
     for output in outputs {
@@ -595,6 +632,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     while state.running {
         event_loop.dispatch(IDLE_TICK, &mut state)?;
+        state.sync_outputs();
     }
 
     for item in state.surfaces.drain(..) {

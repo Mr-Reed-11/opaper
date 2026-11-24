@@ -18,6 +18,7 @@ use zbus::{blocking::Connection, proxy};
 )]
 trait Engine {
     fn set_wallpaper(&self, path: &str) -> zbus::Result<()>;
+    fn set_wallpaper_on_output(&self, path: &str, output: &str) -> zbus::Result<()>;
     fn list_outputs(&self) -> zbus::Result<Vec<String>>;
     fn pause(&self) -> zbus::Result<()>;
     fn resume(&self) -> zbus::Result<()>;
@@ -36,8 +37,11 @@ fn list_outputs() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-fn set_wallpaper(path: String) -> Result<(), String> {
-    with_engine(|engine| engine.set_wallpaper(&path))
+fn set_wallpaper(path: String, output: Option<String>) -> Result<(), String> {
+    with_engine(|engine| match &output {
+        Some(output) => engine.set_wallpaper_on_output(&path, output),
+        None => engine.set_wallpaper(&path),
+    })
 }
 
 #[tauri::command]

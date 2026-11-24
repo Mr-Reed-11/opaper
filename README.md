@@ -9,7 +9,7 @@ Neste milestone 1 há uma engine Rust que desenha shaders GLSL em camadas `Backg
 - `engine/` — renderer wgpu + layer-shell, parser/validador do manifest e serviço D-Bus.
 - `app/` — interface Tauri 2 + Vue 3 + TypeScript + Tailwind v4 + Lucide.
 - `format/` — schema JSON do formato `opaper` v1.
-- `examples/plasma-waves/` — wallpaper de exemplo.
+- `examples/plasma-waves/`, `examples/nebula-space/` — wallpapers de exemplo.
 - `packaging/` — `.desktop`, ícones e arquivos de empacotamento.
 - `docs/` — arquitetura e roadmap do milestone 2.
 - `identity.json` + `scripts/generate-identity.mjs` — fonte única do identificador `br.com.nortixcode.opaper`.
@@ -51,8 +51,10 @@ cd app && npm install && npm run build
 Rode a engine com um wallpaper:
 
 ```sh
-cargo run --manifest-path engine/Cargo.toml -- examples/plasma-waves
+cargo run --manifest-path engine/Cargo.toml -- examples/nebula-space
 ```
+
+Outro exemplo disponível é `examples/plasma-waves`.
 
 Em outro terminal, abra a interface:
 
@@ -75,7 +77,9 @@ gdbus call --session \
   /home/vitor/Projetos/outros/opaper/examples/plasma-waves
 ```
 
-Métodos disponíveis: `SetWallpaper(path)`, `ListOutputs()`, `Pause()`, `Resume()` e `Quit()`.
+Métodos disponíveis: `SetWallpaper(path)`, `SetWallpaperOnOutput(path, output)`, `ListOutputs()`, `Pause()`, `Resume()` e `Quit()`.
+
+Na interface, use **Monitor** para escolher um output específico ou **Todos os monitores**. Cada monitor pode ter um wallpaper diferente; basta selecionar o monitor, informar a pasta e clicar **Aplicar**.
 
 A interface tem tray com **Abrir biblioteca**, **Pausar/Retomar** e **Sair**. Fechar a janela apenas a esconde; **Sair** encerra a interface e a engine.
 

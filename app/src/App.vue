@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { FolderOpen, Monitor, Pause, Play, RefreshCw } from '@lucide/vue';
 
 const outputs = ref<string[]>([]);
+const selectedOutput = ref('');
 const path = ref('');
 const message = ref('');
 const paused = ref(false);
@@ -20,7 +21,10 @@ async function refresh() {
 async function apply() {
   if (!path.value.trim()) return;
   try {
-    await invoke('set_wallpaper', { path: path.value.trim() });
+    await invoke('set_wallpaper', {
+      path: path.value.trim(),
+      output: selectedOutput.value || null,
+    });
     message.value = 'Wallpaper aplicado.';
   } catch (error) {
     message.value = `Falha ao aplicar: ${error}`;
@@ -56,7 +60,18 @@ refresh();
 
     <section class="rounded-xl border border-white/10 bg-white/5 p-6">
       <h2 class="mb-4 text-sm font-medium text-white/60">Biblioteca</h2>
-      <label class="block text-sm text-white/70" for="wallpaper-path">Pasta do wallpaper</label>
+      <label class="block text-sm text-white/70" for="wallpaper-output">Monitor</label>
+      <select
+        id="wallpaper-output"
+        v-model="selectedOutput"
+        class="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+      >
+        <option value="">Todos os monitores</option>
+        <option v-for="output in outputs" :key="output" :value="output">
+          {{ output }}
+        </option>
+      </select>
+      <label class="mt-4 block text-sm text-white/70" for="wallpaper-path">Pasta do wallpaper</label>
       <div class="mt-2 flex gap-2">
         <input
           id="wallpaper-path"
