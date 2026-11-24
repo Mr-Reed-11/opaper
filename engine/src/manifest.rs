@@ -180,6 +180,10 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/plasma-waves")
     }
 
+    fn nebula_dir() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/nebula-space")
+    }
+
     #[test]
     fn parses_bundled_example() {
         let (manifest, shader) = load(&example_dir()).expect("example must be valid");
@@ -194,6 +198,20 @@ mod tests {
         assert_eq!(slots[1][0], 4.0);
         assert_eq!(slots[2][0], 0x13 as f32 / 255.0);
         assert_eq!(slots[3][2], 1.0);
+    }
+
+    #[test]
+    fn parses_nebula_example() {
+        let (manifest, shader) = load(&nebula_dir()).expect("nebula example must be valid");
+        assert_eq!(manifest.name, "Nebula Space");
+        assert_eq!(manifest.params.len(), 8);
+        assert!(shader.ends_with("shader.frag"));
+
+        let slots = manifest.uniforms().unwrap();
+        assert_eq!(slots[0][0], 1.0);
+        assert_eq!(slots[1][0], 140.0);
+        assert_eq!(slots[5][0], 0x08 as f32 / 255.0);
+        assert_eq!(slots[7][2], 1.0);
     }
 
     #[test]

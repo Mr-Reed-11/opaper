@@ -73,6 +73,14 @@ mod tests {
     }
 
     #[test]
+    fn accepts_nebula_shader() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/nebula-space/shader.frag");
+        let source = fs::read_to_string(path).unwrap();
+        validate_source(&source).expect("nebula shader must be valid");
+    }
+
+    #[test]
     fn rejects_missing_version() {
         let err = validate_source("void main() {}").unwrap_err();
         assert!(err.contains("#version"), "{err}");

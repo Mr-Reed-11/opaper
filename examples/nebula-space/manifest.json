@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "Nebula Space",
+  "author": "opaper",
+  "version": "0.1.0",
+  "description": "Espaço animado com campo de estrelas, nebulosas e cometas.",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "speed": { "type": "float", "label": "Velocidade", "slot": 0, "default": 1.0, "min": 0.0, "max": 3.0 },
+    "star_density": { "type": "float", "label": "Densidade de estrelas", "slot": 1, "default": 140.0, "min": 40.0, "max": 300.0 },
+    "nebula_scale": { "type": "float", "label": "Escala da nebulosa", "slot": 2, "default": 3.2, "min": 1.0, "max": 8.0 },
+    "nebula_intensity": { "type": "float", "label": "Intensidade da nebulosa", "slot": 3, "default": 0.9, "min": 0.0, "max": 2.0 },
+    "comet_speed": { "type": "float", "label": "Velocidade dos cometas", "slot": 4, "default": 0.08, "min": 0.0, "max": 0.5 },
+    "deep_space": { "type": "color", "label": "Espaço profundo", "slot": 5, "default": "#080518" },
+    "violet": { "type": "color", "label": "Nebulosa violeta", "slot": 6, "default": "#7a4dff" },
+    "cyan": { "type": "color", "label": "Nebulosa ciano", "slot": 7, "default": "#43d9ff" }
+  }
+}
