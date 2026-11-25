@@ -1,21 +1,27 @@
 {
+  "schema_version": 1,
   "name": "Space Clock",
-  "description": "Digital clock with circular audio visualizer in space",
   "author": "opaper",
+  "version": "1.0.0",
+  "description": "Digital clock with circular audio visualizer in space",
+  "type": "shader",
   "shader": "shader.frag",
   "params": {
     "ring_color": {
       "type": "color",
+      "slot": 2,
       "label": "Ring Color",
       "default": "#1a8aff"
     },
     "glow_color": {
       "type": "color",
+      "slot": 3,
       "label": "Glow Color",
       "default": "#00e5ff"
     },
     "clock_color": {
       "type": "color",
+      "slot": 4,
       "label": "Clock Color",
       "default": "#b0d4ff"
     }

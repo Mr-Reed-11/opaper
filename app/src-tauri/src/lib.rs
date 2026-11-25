@@ -142,22 +142,16 @@ fn scan_wallpaper_dir(dir: &Path) -> Vec<WallpaperInfo> {
 fn list_wallpapers() -> Vec<WallpaperInfo> {
     let mut all = Vec::new();
 
-    // Dev / build-time examples (take priority over installed)
-    let dev_examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
-    if dev_examples.is_dir() {
-        all.extend(scan_wallpaper_dir(&dev_examples));
-    }
-
-    // System-wide examples (installed)
-    all.extend(scan_wallpaper_dir(Path::new("/usr/share/opaper/examples")));
-
-    // User wallpapers
+    // User wallpapers (take priority over system)
     let home = std::env::var("HOME").unwrap_or_default();
     let xdg = std::env::var("XDG_DATA_HOME")
         .unwrap_or_else(|_| format!("{home}/.local/share"));
     all.extend(scan_wallpaper_dir(&Path::new(&xdg).join("opaper/wallpapers")));
 
-    // Deduplicate by name
+    // System-wide examples (installed)
+    all.extend(scan_wallpaper_dir(Path::new("/usr/share/opaper/examples")));
+
+    // Deduplicate by name (user wins over system)
     all.sort_by(|a, b| a.name.cmp(&b.name));
     all.dedup_by(|a, b| a.name == b.name);
     all

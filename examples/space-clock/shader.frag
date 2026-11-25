@@ -14,56 +14,64 @@ layout(set = 0, binding = 0) uniform Globals {
 };
 
 #define PI 3.14159265
+#define TAU 6.28318530
 
-float hash(float n) { return fract(sin(n) * 43758.5453); }
-
-float starField(vec2 uv, float scale) {
-    vec2 cell = floor(uv * scale);
-    vec2 f = fract(uv * scale);
-    float h = hash(dot(cell, vec2(127.1, 311.7)));
-    if (h < 0.96) return 0.0;
-    float brightness = smoothstep(0.96, 1.0, h);
-    float twinkle = sin(iTime * (1.5 + h * 3.0) + h * 100.0) * 0.3 + 0.7;
-    return brightness * twinkle * smoothstep(0.4, 0.0, length(f - 0.5));
+float hash(vec2 p) {
+    p = fract(p * vec2(233.34, 851.74));
+    p += dot(p, p + 23.45);
+    return fract(p.x * p.y);
 }
 
-int digitBits(int d) {
-    if (d == 0) return 31599;
-    if (d == 1) return 9362;
-    if (d == 2) return 29671;
-    if (d == 3) return 29647;
-    if (d == 4) return 23497;
-    if (d == 5) return 31183;
-    if (d == 6) return 31215;
-    if (d == 7) return 29257;
-    if (d == 8) return 31727;
-    if (d == 9) return 31695;
-    return 0;
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
+               mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
 }
 
-float drawPx(vec2 p, vec2 c, float ps) {
-    vec2 d = max(abs(p - c) - ps * 0.4, vec2(0.0));
-    return smoothstep(ps * 0.12, 0.0, length(d));
+float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.1; a *= 0.5; }
+    return v;
 }
 
-float drawDigit(vec2 p, int d, float ps) {
-    if (p.x < 0.0 || p.x >= 3.0 * ps || p.y < 0.0 || p.y >= 5.0 * ps) return 0.0;
-    int cx = int(p.x / ps);
-    int ry = 4 - int(p.y / ps);
-    if (cx > 2) cx = 2;
-    if (ry < 0) ry = 0;
-    int bits = digitBits(d);
-    int idx = 14 - (ry * 3 + cx);
-    if (((bits >> idx) & 1) == 0) return 0.0;
-    vec2 center = vec2((float(cx) + 0.5) * ps, (float(4 - ry) + 0.5) * ps);
-    return drawPx(p, center, ps);
+float segLine(vec2 p, vec2 a, vec2 b, float w) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return smoothstep(w, 0.0, length(pa - ba * h));
 }
 
-float drawColon(vec2 p, float ps) {
-    if (p.x < 0.0 || p.x >= ps || p.y < 0.0 || p.y >= 5.0 * ps) return 0.0;
-    float a = drawPx(p, vec2(0.5 * ps, 3.5 * ps), ps);
-    float b = drawPx(p, vec2(0.5 * ps, 1.5 * ps), ps);
-    return max(a, b);
+float digit7(vec2 p, int d, float size) {
+    float w = size * 0.06;
+    float s = size;
+    float h = size * 1.8;
+    float m = size * 0.08;
+
+    vec2 tl = vec2(m, h - m);
+    vec2 tr = vec2(s - m, h - m);
+    vec2 ml = vec2(m, h * 0.5);
+    vec2 mr = vec2(s - m, h * 0.5);
+    vec2 bl = vec2(m, m);
+    vec2 br = vec2(s - m, m);
+
+    float v = 0.0;
+    if (d != 1 && d != 4)                     v = max(v, segLine(p, tl, tr, w));
+    if (d != 5 && d != 6)                     v = max(v, segLine(p, tr, mr, w));
+    if (d != 2)                               v = max(v, segLine(p, mr, br, w));
+    if (d != 1 && d != 4 && d != 7)           v = max(v, segLine(p, bl, br, w));
+    if (d == 0 || d == 2 || d == 6 || d == 8) v = max(v, segLine(p, bl, ml, w));
+    if (d != 1 && d != 2 && d != 3 && d != 7) v = max(v, segLine(p, tl, ml, w));
+    if (d != 0 && d != 1 && d != 7)           v = max(v, segLine(p, ml, mr, w));
+    return v;
+}
+
+float colon7(vec2 p, float size) {
+    float h = size * 1.8;
+    float r = size * 0.06;
+    float d1 = length(p - vec2(size * 0.2, h * 0.65));
+    float d2 = length(p - vec2(size * 0.2, h * 0.35));
+    return max(smoothstep(r, 0.0, d1), smoothstep(r, 0.0, d2));
 }
 
 void main() {
@@ -74,113 +82,99 @@ void main() {
     vec3 clockCol = iParams[4].rgb;
 
     float level = iAudio.x;
-    float bass = iAudio.y;
-    float mid = iAudio.z;
-    float treble = iAudio.w;
 
-    // --- Space background ---
-    vec3 col = vec3(0.01, 0.01, 0.04);
-    float nebula1 = sin(uv.x * 2.0 + iTime * 0.02) * cos(uv.y * 1.5 - iTime * 0.015);
-    float nebula2 = cos(uv.x * 1.2 - iTime * 0.03) * sin(uv.y * 2.5 + iTime * 0.01);
-    col += vec3(0.06, 0.01, 0.1) * (nebula1 * 0.5 + 0.5) * 0.2;
-    col += vec3(0.01, 0.04, 0.1) * (nebula2 * 0.5 + 0.5) * 0.15;
+    // --- Nebula ---
+    vec3 col = vec3(0.005, 0.005, 0.02);
+    vec2 np = uv * 1.2;
+    col += vec3(0.15, 0.03, 0.25) * smoothstep(0.25, 0.65, fbm(np + iTime * 0.008)) * 0.7;
+    col += vec3(0.03, 0.1, 0.3) * smoothstep(0.3, 0.7, fbm(np * 0.7 + 5.2 + iTime * 0.006)) * 0.5;
+    col += vec3(0.05, 0.02, 0.08) * fbm(uv * 2.5 + iTime * 0.003);
 
-    vec2 starUV = gl_FragCoord.xy / iResolution.y;
-    col += vec3(0.8, 0.85, 1.0) * starField(starUV, 80.0);
-    col += vec3(0.9, 0.9, 1.0) * starField(starUV + 50.0, 150.0) * 0.6;
-    col += vec3(1.0, 0.9, 0.8) * starField(starUV + 100.0, 250.0) * 0.4;
+    // --- Stars ---
+    vec2 starUV = gl_FragCoord.xy / 3.0;
+    vec2 cell = floor(starUV);
+    vec2 f = fract(starUV) - 0.5;
+    float sh = hash(cell);
+    if (sh > 0.98) {
+        float b = (sh - 0.98) * 50.0;
+        float tw = sin(iTime * (1.0 + sh * 3.0) + sh * 50.0) * 0.2 + 0.8;
+        col += b * tw * exp(-dot(f, f) * 80.0) * vec3(0.85, 0.9, 1.0);
+    }
 
-    // --- Circular visualizer ---
+    // --- Circular rays (rotating) ---
     float dist = length(uv);
     float angle = atan(uv.y, uv.x);
+    float rotation = iTime * 0.12;
+    float rotAngle = angle - rotation;
 
-    float innerR = 0.3;
-    float maxBarH = 0.2;
-    float barCount = 80.0;
-    float sector = 2.0 * PI / barCount;
+    float innerR = 0.2;
+    float rayCount = 140.0;
+    float sector = TAU / rayCount;
 
-    float barIdx = floor((angle + PI) / sector);
-    float barAngle = (barIdx + 0.5) * sector - PI;
+    float rayIdx = floor((rotAngle + PI) / sector);
+    float rayAngle = (rayIdx + 0.5) * sector - PI;
+    float aDiff = abs(rotAngle - rayAngle);
+    if (aDiff > PI) aDiff = TAU - aDiff;
 
-    float angleDiff = abs(angle - barAngle);
-    if (angleDiff > PI) angleDiff = 2.0 * PI - angleDiff;
-    float inBar = smoothstep(sector * 0.38, sector * 0.28, angleDiff);
+    float rayW = 0.0008 + dist * 0.0003;
+    float inRay = smoothstep(rayW, rayW * 0.2, aDiff * dist);
 
-    float h = hash(barIdx * 127.53);
-    float barH = level * (0.5 + h * 0.5) * maxBarH;
-    barH = max(barH, 0.006);
+    float rh = hash(vec2(rayIdx * 73.156, rayIdx * 19.73));
+    float baseH = 0.08 + rh * 0.25;
+    float audioH = level * (0.3 + rh * 0.5);
+    float rayH = baseH + audioH;
 
     float radial = dist - innerR;
+    float rayMask = inRay * step(0.0, radial) * smoothstep(rayH, rayH - 0.008, radial);
 
-    // Segmented bars
-    float segH = 0.012;
-    float segGap = 0.005;
-    float segUnit = segH + segGap;
-    float segIdx = floor(radial / segUnit);
-    float segFrac = fract(radial / segUnit);
-    float inSeg = step(0.0, radial) * step(radial, barH) * step(segFrac * segUnit, segH);
+    float fade = 1.0 - smoothstep(0.0, rayH, radial) * 0.7;
+    vec3 rayCol = mix(ringCol, glowCol, clamp(radial / 0.3, 0.0, 1.0));
 
-    float barMask = inBar * inSeg;
+    col += rayCol * rayMask * fade * 0.9;
 
-    float t = radial / maxBarH;
-    vec3 barColor = mix(ringCol, glowCol, clamp(t, 0.0, 1.0));
-
-    col = mix(col, barColor, barMask);
-
-    // Glow around active bars
-    if (dist > innerR && dist < innerR + barH + 0.03) {
-        float glowR = abs(dist - (innerR + barH));
-        float glow = inBar * exp(-glowR * 40.0) * level * 0.25;
-        col += glowCol * glow;
+    if (radial > 0.0 && radial < rayH + 0.05) {
+        float gd = max(radial - rayH, 0.0);
+        col += glowCol * inRay * exp(-gd * 25.0) * (0.1 + level * 0.2);
     }
 
     // --- Inner circle ---
-    float faceMask = smoothstep(innerR + 0.002, innerR - 0.005, dist);
-    col = mix(col, vec3(0.02, 0.02, 0.06), faceMask * 0.97);
+    float faceMask = smoothstep(innerR + 0.003, innerR - 0.01, dist);
+    col = mix(col, vec3(0.008, 0.008, 0.025), faceMask * 0.98);
 
-    // Thin ring border
-    float ring = smoothstep(innerR + 0.004, innerR + 0.001, dist)
-               - smoothstep(innerR + 0.001, innerR - 0.002, dist);
-    col += ringCol * ring * 0.6;
-
-    // Audio pulse on ring
+    float ring = smoothstep(innerR + 0.004, innerR, dist)
+               - smoothstep(innerR, innerR - 0.004, dist);
+    col += ringCol * ring * 0.3;
     col += glowCol * ring * level * 0.4;
 
-    // --- Digital clock HH:MM ---
+    // --- 7-segment clock HH:MM ---
     float totalSec = iDate.w;
     int ih = int(mod(totalSec / 3600.0, 24.0));
     int im = int(mod(totalSec / 60.0, 60.0));
 
-    float ps = 0.028;
-    float dw = 3.0 * ps;
-    float cw = 1.0 * ps;
-    float gap = 1.8 * ps;
-    float totalW = 4.0 * dw + 1.0 * (cw + gap) + 3.0 * gap;
-    float dh = 5.0 * ps;
+    float sz = 0.055;
+    float dgap = sz * 0.25;
+    float cw = sz * 0.4;
+    float totalW = 4.0 * sz + 2.0 * dgap + cw + 2.0 * dgap;
+    float totalH = sz * 1.8;
 
-    vec2 tOrig = vec2(-totalW / 2.0, -dh / 2.0);
-    vec2 tp = uv - tOrig;
+    vec2 tp = uv - vec2(-totalW / 2.0, -totalH / 2.0);
 
-    if (tp.x >= 0.0 && tp.x <= totalW && tp.y >= 0.0 && tp.y <= dh) {
+    if (tp.x >= -0.03 && tp.x <= totalW + 0.03 && tp.y >= -0.03 && tp.y <= totalH + 0.03) {
         float ta = 0.0;
         float xo = 0.0;
-        ta = max(ta, drawDigit(tp - vec2(xo, 0.0), ih / 10, ps)); xo += dw + gap;
-        ta = max(ta, drawDigit(tp - vec2(xo, 0.0), ih - (ih / 10) * 10, ps)); xo += dw + gap;
+        ta = max(ta, digit7(tp - vec2(xo, 0.0), ih / 10, sz)); xo += sz + dgap;
+        ta = max(ta, digit7(tp - vec2(xo, 0.0), ih - (ih / 10) * 10, sz)); xo += sz + dgap;
         float blink = step(0.0, sin(iTime * PI));
-        ta = max(ta, drawColon(tp - vec2(xo, 0.0), ps) * blink); xo += cw + gap;
-        ta = max(ta, drawDigit(tp - vec2(xo, 0.0), im / 10, ps)); xo += dw + gap;
-        ta = max(ta, drawDigit(tp - vec2(xo, 0.0), im - (im / 10) * 10, ps));
+        ta = max(ta, colon7(tp - vec2(xo, 0.0), sz) * blink); xo += cw + dgap;
+        ta = max(ta, digit7(tp - vec2(xo, 0.0), im / 10, sz)); xo += sz + dgap;
+        ta = max(ta, digit7(tp - vec2(xo, 0.0), im - (im / 10) * 10, sz));
 
-        vec3 textCol = mix(clockCol, glowCol, level * 0.3);
-        col = mix(col, textCol, ta * 0.95);
-
-        // Text glow
-        col += textCol * ta * 0.1;
+        vec3 textCol = mix(clockCol, vec3(1.0), 0.2);
+        col = mix(col, textCol, ta);
+        col += textCol * ta * 0.15;
     }
 
-    // Vignette
-    float vig = 1.0 - length(uv) * 0.5;
-    col *= clamp(vig, 0.3, 1.0);
+    col *= 1.0 - length(uv) * 0.25;
 
     outColor = vec4(col, 1.0);
 }

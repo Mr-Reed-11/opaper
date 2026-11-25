@@ -343,6 +343,11 @@ impl AppState {
             self.params = params;
             if plasma::is_running() && plasma::plugin_installed() {
                 let shader_name = path.file_name().unwrap_or_default().to_string_lossy();
+                let frag_source = std::fs::read_to_string(&shader_path)
+                    .map_err(|e| format!("cannot read shader for QSB: {e}"))?;
+                if let Err(e) = plasma::compile_qsb(&shader_name, &frag_source) {
+                    eprintln!("plasma: QSB compile warning: {e}");
+                }
                 let abs = std::fs::canonicalize(path)
                     .unwrap_or_else(|_| path.to_path_buf())
                     .to_string_lossy()
@@ -883,6 +888,106 @@ mod plasma {
                 "/usr/share/plasma/wallpapers/org.opaper.wallpaper/metadata.json",
             )
             .exists()
+    }
+
+    pub fn compile_qsb(shader_name: &str, frag_source: &str) -> Result<(), String> {
+        let home = std::env::var("HOME").map_err(|_| "HOME not set".to_string())?;
+        let shaders_dir = format!(
+            "{home}/.local/share/plasma/wallpapers/org.opaper.wallpaper/contents/shaders"
+        );
+        std::fs::create_dir_all(&shaders_dir)
+            .map_err(|e| format!("cannot create shaders dir: {e}"))?;
+
+        let qt_header = r#"#version 440
+
+layout(location = 0) in vec2 qt_TexCoord0;
+layout(location = 0) out vec4 fragColor;
+
+layout(std140, binding = 0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float iTime;
+    float iTimeDelta;
+    float iFrame;
+    float _pad;
+    vec4 iResolution;
+    vec4 iAudio;
+    vec4 iDate;
+    vec4 iP0;
+    vec4 iP1;
+    vec4 iP2;
+    vec4 iP3;
+    vec4 iP4;
+    vec4 iP5;
+    vec4 iP6;
+    vec4 iP7;
+};"#;
+        let params_rebuild =
+            "    vec4 iParams[8] = vec4[8](iP0, iP1, iP2, iP3, iP4, iP5, iP6, iP7);";
+
+        let mut src = frag_source.to_string();
+
+        // Remove original GLSL header
+        src = regex_remove(&src, r"#version\s+\d+\s*\n");
+        src = regex_remove(&src, r"layout\s*\(location\s*=\s*0\)\s*out\s+vec4\s+outColor\s*;");
+        src = regex_remove_dotall(
+            &src,
+            r"layout\s*\([^)]*\)\s*uniform\s+Globals\s*\{[^}]*\}\s*;",
+        );
+
+        src = src.replace("outColor", "fragColor");
+
+        // Insert iParams rebuild after void main() {
+        if let Some(pos) = src.find("void main()") {
+            if let Some(brace) = src[pos..].find('{') {
+                let insert_at = pos + brace + 1;
+                src.insert_str(insert_at, &format!("\n{params_rebuild}"));
+            }
+        }
+
+        // Add qt_Opacity multiply before the last closing brace
+        if let Some(pos) = src.rfind('}') {
+            src.insert_str(pos, "    fragColor.a *= qt_Opacity;\n");
+        }
+
+        let qt_source = format!("{qt_header}\n{}\n", src.trim());
+
+        let qt_frag_path = format!("{shaders_dir}/{shader_name}.frag");
+        let qsb_path = format!("{shaders_dir}/{shader_name}.frag.qsb");
+
+        std::fs::write(&qt_frag_path, &qt_source)
+            .map_err(|e| format!("cannot write qt shader: {e}"))?;
+
+        let qsb_bin = if std::path::Path::new("/usr/lib/qt6/bin/qsb").exists() {
+            "/usr/lib/qt6/bin/qsb"
+        } else {
+            "qsb"
+        };
+
+        let output = Cmd::new(qsb_bin)
+            .args(["--glsl", "440,300 es", "-o", &qsb_path, &qt_frag_path])
+            .output()
+            .map_err(|e| format!("cannot run qsb: {e}"))?;
+
+        let _ = std::fs::remove_file(&qt_frag_path);
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("qsb failed: {stderr}"));
+        }
+
+        eprintln!("plasma: compiled QSB for {shader_name}");
+        Ok(())
+    }
+
+    fn regex_remove(src: &str, pattern: &str) -> String {
+        let re = regex::Regex::new(pattern).unwrap();
+        re.replace_all(src, "").to_string()
+    }
+
+    fn regex_remove_dotall(src: &str, pattern: &str) -> String {
+        let re = regex::RegexBuilder::new(pattern).dot_matches_new_line(true).build().unwrap();
+        re.replace_all(src, "").to_string()
     }
 
     pub fn push_audio_levels(levels: &[f32; 4]) {

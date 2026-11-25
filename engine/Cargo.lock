@@ -1582,6 +1582,7 @@ dependencies = [
  "jsonschema",
  "pollster",
  "raw-window-handle",
+ "regex",
  "serde",
  "serde_json",
  "smithay-client-toolkit",
