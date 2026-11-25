@@ -117,14 +117,15 @@ const emit = defineEmits<{
   restore: []
 }>()
 
-const { selectedManifest, activeParams, activeWallpaperPath, setParam, setFpsLimit, fpsLimit } = useEngine()
+const { selectedManifest, activeParams, activeWallpaperPath, setParam, setFpsLimit, fpsLimit, pauseOnFullscreen, setPauseOnFullscreen } = useEngine()
 const { getOverrides, setOverrides, clearOverrides } = useWallpaperSettings()
 
 const localFps = ref(fpsLimit.value)
-const pauseFullscreen = ref(true)
+const pauseFullscreen = ref(pauseOnFullscreen.value)
 const localParamOverrides = reactive<Record<number, [number, number, number, number]>>({})
 
 watch(fpsLimit, (v) => { localFps.value = v })
+watch(pauseFullscreen, (v) => { setPauseOnFullscreen(v) })
 
 watch(() => props.wallpaper, (wp) => {
   Object.keys(localParamOverrides).forEach(k => delete localParamOverrides[Number(k)])

@@ -6,6 +6,22 @@ WallpaperItem {
 
     property string shaderName: root.configuration.ShaderName || ""
     property string paramsJson: root.configuration.Params || ""
+    property bool paused: root.configuration.Paused === "true"
+    property string audioLevels: root.configuration.AudioLevels || ""
+
+    onAudioLevelsChanged: {
+        if (audioLevels) {
+            var p = audioLevels.split(" ");
+            if (p.length >= 4) {
+                iAudio = Qt.vector4d(
+                    parseFloat(p[0]) || 0,
+                    parseFloat(p[1]) || 0,
+                    parseFloat(p[2]) || 0,
+                    parseFloat(p[3]) || 0
+                );
+            }
+        }
+    }
 
     property real iTime: 0
     property real iTimeDelta: 0.016
@@ -13,6 +29,8 @@ WallpaperItem {
     property real startTime: 0
 
     property vector4d iResolution: Qt.vector4d(root.width, root.height, 1, 0)
+    property vector4d iAudio: Qt.vector4d(0, 0, 0, 0)
+    property vector4d iDateVec: Qt.vector4d(0, 0, 0, 0)
     property vector4d iP0: Qt.vector4d(0, 0, 0, 1)
     property vector4d iP1: Qt.vector4d(0, 0, 0, 1)
     property vector4d iP2: Qt.vector4d(0, 0, 0, 1)
@@ -34,12 +52,16 @@ WallpaperItem {
     }
 
     onParamsJsonChanged: loadParams()
+    onPausedChanged: {
+        timer.running = !!shaderName && !paused;
+    }
+
     onShaderNameChanged: {
         if (shaderName) {
             effect.fragmentShader = Qt.resolvedUrl("../shaders/" + shaderName + ".frag.qsb");
             startTime = Date.now() / 1000.0;
             iFrame = 0;
-            timer.running = true;
+            timer.running = !paused;
         } else {
             timer.running = false;
         }
@@ -50,7 +72,7 @@ WallpaperItem {
             loadParams();
             effect.fragmentShader = Qt.resolvedUrl("../shaders/" + shaderName + ".frag.qsb");
             startTime = Date.now() / 1000.0;
-            timer.running = true;
+            timer.running = !paused;
         }
     }
 
@@ -70,6 +92,8 @@ WallpaperItem {
         property alias iFrame: root.iFrame
         property real _pad: 0
         property alias iResolution: root.iResolution
+        property alias iAudio: root.iAudio
+        property alias iDate: root.iDateVec
         property alias iP0: root.iP0
         property alias iP1: root.iP1
         property alias iP2: root.iP2
@@ -91,6 +115,13 @@ WallpaperItem {
             root.iTime = now - root.startTime;
             root.iTimeDelta = root.iTime - prev;
             root.iFrame++;
+            var d = new Date();
+            root.iDateVec = Qt.vector4d(
+                d.getFullYear(),
+                d.getMonth() + 1,
+                d.getDate(),
+                d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0
+            );
         }
     }
 }

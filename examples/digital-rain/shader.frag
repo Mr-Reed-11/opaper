@@ -8,6 +8,8 @@ layout(set = 0, binding = 0) uniform Globals {
     uint iFrame;
     float _pad;
     vec4 iResolution;
+    vec4 iAudio;
+    vec4 iDate;
     vec4 iParams[8];
 };
 

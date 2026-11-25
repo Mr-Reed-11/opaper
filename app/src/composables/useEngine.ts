@@ -11,6 +11,8 @@ const activeParams = ref<number[][]>([])
 const paused = ref(false)
 const connected = ref(false)
 const fpsLimit = ref(60)
+const pauseOnFullscreen = ref(true)
+
 
 async function loadWallpapers() {
   try {
@@ -75,6 +77,11 @@ async function setFpsLimit(fps: number) {
   fpsLimit.value = fps
 }
 
+async function setPauseOnFullscreen(enabled: boolean) {
+  await invoke('set_pause_on_fullscreen', { enabled })
+  pauseOnFullscreen.value = enabled
+}
+
 async function restoreDefault() {
   activeWallpaperPath.value = ''
   selectedManifest.value = null
@@ -106,6 +113,7 @@ export function useEngine() {
     paused,
     connected,
     fpsLimit,
+    pauseOnFullscreen,
     loadWallpapers,
     loadOutputs,
     loadActiveState,
@@ -113,6 +121,7 @@ export function useEngine() {
     applyWallpaper,
     setParam,
     setFpsLimit,
+    setPauseOnFullscreen,
     restoreDefault,
     togglePause,
     quitApp,

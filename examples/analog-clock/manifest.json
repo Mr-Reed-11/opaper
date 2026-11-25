@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "name": "Analog Clock",
+  "author": "opaper",
+  "version": "1.0.0",
+  "description": "Minimal analog clock with animated background",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "clock_size": {
+      "type": "float",
+      "slot": 0,
+      "label": "Tamanho do relógio",
+      "default": 0.35,
+      "min": 0.15,
+      "max": 0.5
+    },
+    "hand_width": {
+      "type": "float",
+      "slot": 1,
+      "label": "Espessura dos ponteiros",
+      "default": 0.012,
+      "min": 0.005,
+      "max": 0.03
+    },
+    "face_color": {
+      "type": "color",
+      "slot": 2,
+      "label": "Cor do mostrador",
+      "default": "#1A1A2E"
+    },
+    "hand_color": {
+      "type": "color",
+      "slot": 3,
+      "label": "Cor dos ponteiros",
+      "default": "#E2E8F0"
+    },
+    "second_color": {
+      "type": "color",
+      "slot": 4,
+      "label": "Cor do segundeiro",
+      "default": "#EF4444"
+    },
+    "bg_color": {
+      "type": "color",
+      "slot": 5,
+      "label": "Cor de fundo",
+      "default": "#0E1640"
+    },
+    "accent_color": {
+      "type": "color",
+      "slot": 6,
+      "label": "Cor de destaque",
+      "default": "#8B5CF6"
+    }
+  }
+}

@@ -27,6 +27,7 @@ trait Engine {
     fn get_manifest(&self) -> zbus::Result<String>;
     fn get_params(&self) -> zbus::Result<String>;
     fn list_outputs(&self) -> zbus::Result<Vec<String>>;
+    fn set_pause_on_fullscreen(&self, enabled: bool) -> zbus::Result<()>;
     fn pause(&self) -> zbus::Result<()>;
     fn resume(&self) -> zbus::Result<()>;
     fn quit(&self) -> zbus::Result<()>;
@@ -74,6 +75,11 @@ fn get_manifest() -> Result<String, String> {
 #[tauri::command]
 fn get_params() -> Result<String, String> {
     with_engine(|engine| engine.get_params())
+}
+
+#[tauri::command]
+fn set_pause_on_fullscreen(enabled: bool) -> Result<(), String> {
+    with_engine(|engine| engine.set_pause_on_fullscreen(enabled))
 }
 
 #[tauri::command]
@@ -136,14 +142,14 @@ fn scan_wallpaper_dir(dir: &Path) -> Vec<WallpaperInfo> {
 fn list_wallpapers() -> Vec<WallpaperInfo> {
     let mut all = Vec::new();
 
-    // System-wide examples (installed)
-    all.extend(scan_wallpaper_dir(Path::new("/usr/share/opaper/examples")));
-
-    // Dev / build-time examples
+    // Dev / build-time examples (take priority over installed)
     let dev_examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
     if dev_examples.is_dir() {
         all.extend(scan_wallpaper_dir(&dev_examples));
     }
+
+    // System-wide examples (installed)
+    all.extend(scan_wallpaper_dir(Path::new("/usr/share/opaper/examples")));
 
     // User wallpapers
     let home = std::env::var("HOME").unwrap_or_default();
@@ -183,6 +189,7 @@ pub fn run() {
             set_wallpaper,
             set_param,
             set_fps_limit,
+            set_pause_on_fullscreen,
             get_active_wallpaper,
             get_manifest,
             get_params,

@@ -1,10 +1,13 @@
 mod manifest;
 mod shader;
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel as reply_channel;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
+
+mod audio;
 
 use bytemuck::{Pod, Zeroable};
 use smithay_client_toolkit::{
@@ -48,6 +51,8 @@ struct Globals {
     i_frame: u32,
     pad: f32,
     i_resolution: [f32; 4],
+    i_audio: [f32; 4],
+    i_date: [f32; 4],
     i_params: [[f32; 4]; MAX_PARAMS],
 }
 
@@ -72,6 +77,8 @@ enum Command {
     GetParams {
         reply: std::sync::mpsc::Sender<String>,
     },
+    FullscreenScan(String),
+    SetPauseOnFullscreen(bool),
     Pause,
     Resume,
     Quit,
@@ -117,8 +124,11 @@ struct AppState {
     paused: bool,
     running: bool,
     plasma_plugin: bool,
+    audio_levels: Arc<RwLock<[f32; 4]>>,
     active_wallpaper: Option<PathBuf>,
     active_manifest: Option<String>,
+    fullscreen_outputs: HashSet<String>,
+    pause_on_fullscreen: bool,
 }
 
 fn output_name(output_state: &OutputState, output: &wl_output::WlOutput) -> String {
@@ -215,6 +225,10 @@ impl AppState {
             .iter()
             .position(|s| s.layer.wl_surface() == wl_surface)
         else { return };
+        let surface_paused = self.paused || (self.pause_on_fullscreen && {
+            let oname = output_name(&self.output_state, &self.surfaces[index].output);
+            self.fullscreen_outputs.contains(&oname)
+        });
         let item = &self.surfaces[index];
         if !item.configured || item.width == 0 || item.height == 0 {
             return;
@@ -232,12 +246,33 @@ impl AppState {
         let delta = now.duration_since(self.last_frame);
         self.last_frame = now;
         let elapsed = now.duration_since(self.start);
+        let audio = *self.audio_levels.read().unwrap();
+        let now_utc = {
+            let d = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let secs_today = (d % 86400) as f32;
+            let days = (d / 86400) as i64 + 719468;
+            let era = days / 146097;
+            let doe = days - era * 146097;
+            let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+            let y = yoe + era * 400;
+            let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+            let mp = (5 * doy + 2) / 153;
+            let m = if mp < 10 { mp + 3 } else { mp - 9 };
+            let yr = if m <= 2 { y + 1 } else { y };
+            let day = doy - (153 * mp + 2) / 5 + 1;
+            [yr as f32, m as f32, day as f32, secs_today]
+        };
         let globals = Globals {
             i_time: elapsed.as_secs_f32(),
             i_time_delta: delta.as_secs_f32(),
             i_frame: self.frame,
             pad: 0.0,
             i_resolution: [item.width as f32, item.height as f32, 1.0, 0.0],
+            i_audio: audio,
+            i_date: now_utc,
             i_params: if item.pipeline.is_some() { item.params } else { self.params },
         };
         self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&globals));
@@ -267,7 +302,7 @@ impl AppState {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-            if !self.paused {
+            if !surface_paused {
                 pass.set_pipeline(item.pipeline.as_ref().unwrap_or(&self.pipeline));
                 pass.set_bind_group(0, &self.bind_group, &[]);
                 pass.draw(0..3, 0..1);
@@ -303,39 +338,40 @@ impl AppState {
         self.active_wallpaper = Some(path.to_path_buf());
         self.active_manifest = Some(manifest_json);
 
-        if let Some(name) = output {
-            if !self.plasma_plugin {
-                let available: Vec<String> = self
-                    .surfaces
-                    .iter()
-                    .map(|surface| output_name(&self.output_state, &surface.output))
-                    .collect();
-                let surface = self
-                    .surfaces
-                    .iter_mut()
-                    .find(|surface| output_name(&self.output_state, &surface.output) == name)
-                    .ok_or_else(|| format!("output not found: {name} (available: {})", available.join(", ")))?;
-                surface.pipeline = Some(pipeline.clone());
-                surface.params = params;
-            }
-        }
-
-        if output.is_none() || self.plasma_plugin {
-            for surface in &mut self.surfaces {
-                surface.pipeline = Some(pipeline.clone());
-                surface.params = params;
-            }
+        if self.plasma_plugin {
             self.pipeline = pipeline;
             self.params = params;
-
             if plasma::is_running() && plasma::plugin_installed() {
                 let shader_name = path.file_name().unwrap_or_default().to_string_lossy();
                 let abs = std::fs::canonicalize(path)
                     .unwrap_or_else(|_| path.to_path_buf())
                     .to_string_lossy()
                     .to_string();
-                plasma::activate_opaper(&shader_name, &abs, &params);
+                match output {
+                    Some(name) => plasma::activate_opaper_on_output(&shader_name, &abs, &params, name),
+                    None => plasma::activate_opaper(&shader_name, &abs, &params),
+                }
             }
+        } else if let Some(name) = output {
+            let available: Vec<String> = self
+                .surfaces
+                .iter()
+                .map(|surface| output_name(&self.output_state, &surface.output))
+                .collect();
+            let surface = self
+                .surfaces
+                .iter_mut()
+                .find(|surface| output_name(&self.output_state, &surface.output) == name)
+                .ok_or_else(|| format!("output not found: {name} (available: {})", available.join(", ")))?;
+            surface.pipeline = Some(pipeline);
+            surface.params = params;
+        } else {
+            for surface in &mut self.surfaces {
+                surface.pipeline = Some(pipeline.clone());
+                surface.params = params;
+            }
+            self.pipeline = pipeline;
+            self.params = params;
         }
         Ok(())
     }
@@ -455,6 +491,14 @@ impl EngineIface {
             .map_err(|_| fdo::Error::Timeout("timed out".to_owned()))
     }
 
+    fn fullscreen_scan(&self, outputs: &str) {
+        let _ = self.commands.send(Command::FullscreenScan(outputs.to_owned()));
+    }
+
+    fn set_pause_on_fullscreen(&self, enabled: bool) {
+        let _ = self.commands.send(Command::SetPauseOnFullscreen(enabled));
+    }
+
     fn pause(&self) {
         let _ = self.commands.send(Command::Pause);
     }
@@ -476,23 +520,27 @@ fn handle_command(state: &mut AppState, command: Command) {
         }
         Command::SetParam { slot, value, output } => {
             let idx = slot as usize;
-            match output {
-                Some(name) if !state.plasma_plugin => {
-                    if let Some(surface) = state.surfaces.iter_mut().find(|s| {
-                        output_name(&state.output_state, &s.output) == name
-                    }) {
-                        surface.params[idx] = value;
-                    }
-                }
-                _ => {
-                    state.params[idx] = value;
-                    for surface in &mut state.surfaces {
-                        surface.params[idx] = value;
-                    }
-                }
-            }
+            state.params[idx] = value;
             if state.plasma_plugin {
-                plasma::update_params(&state.params);
+                match output {
+                    Some(ref name) => plasma::update_params_on_output(&state.params, name),
+                    None => plasma::update_params(&state.params),
+                }
+            } else {
+                match output {
+                    Some(name) => {
+                        if let Some(surface) = state.surfaces.iter_mut().find(|s| {
+                            output_name(&state.output_state, &s.output) == name
+                        }) {
+                            surface.params[idx] = value;
+                        }
+                    }
+                    None => {
+                        for surface in &mut state.surfaces {
+                            surface.params[idx] = value;
+                        }
+                    }
+                }
             }
         }
         Command::SetFpsLimit(fps) => state.fps_limit = fps,
@@ -511,6 +559,35 @@ fn handle_command(state: &mut AppState, command: Command) {
         Command::GetParams { reply } => {
             let params_json = serde_json::to_string(&state.params).unwrap_or_default();
             let _ = reply.send(params_json);
+        }
+        Command::FullscreenScan(outputs_str) => {
+            let new_fs: HashSet<String> = outputs_str
+                .split(',')
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_owned())
+                .collect();
+            if state.pause_on_fullscreen && state.plasma_plugin {
+                for name in new_fs.difference(&state.fullscreen_outputs) {
+                    plasma::set_paused_on_output(name, true);
+                }
+                for name in state.fullscreen_outputs.difference(&new_fs) {
+                    plasma::set_paused_on_output(name, false);
+                }
+            }
+            state.fullscreen_outputs = new_fs;
+        }
+        Command::SetPauseOnFullscreen(enabled) => {
+            if !enabled && state.plasma_plugin {
+                for name in &state.fullscreen_outputs {
+                    plasma::set_paused_on_output(name, false);
+                }
+            }
+            state.pause_on_fullscreen = enabled;
+            if enabled && state.plasma_plugin {
+                for name in &state.fullscreen_outputs {
+                    plasma::set_paused_on_output(name, true);
+                }
+            }
         }
         Command::Pause => state.paused = true,
         Command::Resume => state.paused = false,
@@ -727,6 +804,75 @@ mod plasma {
         eval(&script);
     }
 
+    pub fn activate_opaper_on_output(shader_name: &str, wallpaper_path: &str, params: &[[f32; 4]; 8], output_name: &str) {
+        let Some(&screen_idx) = get_output_screen_map().get(output_name) else { return };
+        let pj = params_json(params);
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 if (d[i].screen == {screen_idx}) {{ \
+                     d[i].wallpaperPlugin = 'org.opaper.wallpaper'; \
+                     d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                     d[i].writeConfig('ShaderName', '{shader_name}'); \
+                     d[i].writeConfig('WallpaperPath', '{wallpaper_path}'); \
+                     d[i].writeConfig('Params', '{pj}'); \
+                 }} \
+             }}"
+        );
+        eval(&script);
+    }
+
+    pub fn update_params_on_output(params: &[[f32; 4]; 8], output_name: &str) {
+        let Some(&screen_idx) = get_output_screen_map().get(output_name) else { return };
+        let pj = params_json(params);
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 if (d[i].screen == {screen_idx}) {{ \
+                     d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                     d[i].writeConfig('Params', '{pj}'); \
+                 }} \
+             }}"
+        );
+        eval(&script);
+    }
+
+    fn get_output_screen_map() -> std::collections::HashMap<String, u32> {
+        let mut map = std::collections::HashMap::new();
+        let Ok(output) = Cmd::new("qdbus6")
+            .args(["org.kde.KWin", "/KWin", "org.kde.KWin.supportInformation"])
+            .output()
+        else { return map };
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut current_screen: Option<u32> = None;
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("Screen ") && trimmed.ends_with(':') {
+                current_screen = trimmed[7..trimmed.len() - 1].parse().ok();
+            } else if let Some(name) = trimmed.strip_prefix("Name: ") {
+                if let Some(idx) = current_screen.take() {
+                    map.insert(name.to_string(), idx);
+                }
+            }
+        }
+        map
+    }
+
+    pub fn set_paused_on_output(output_name: &str, paused: bool) {
+        let Some(&screen_idx) = get_output_screen_map().get(output_name) else { return };
+        let val = if paused { "true" } else { "false" };
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 if (d[i].screen == {screen_idx}) {{ \
+                     d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                     d[i].writeConfig('Paused', '{val}'); \
+                 }} \
+             }}"
+        );
+        eval(&script);
+    }
+
     pub fn plugin_installed() -> bool {
         let home = std::env::var("HOME").unwrap_or_default();
         std::path::Path::new(&format!(
@@ -737,6 +883,17 @@ mod plasma {
                 "/usr/share/plasma/wallpapers/org.opaper.wallpaper/metadata.json",
             )
             .exists()
+    }
+
+    pub fn push_audio_levels(levels: &[f32; 4]) {
+        let val = format!("{:.3} {:.3} {:.3} {:.3}", levels[0], levels[1], levels[2], levels[3]);
+        eval(&format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                 d[i].writeConfig('AudioLevels', '{val}'); \
+             }}"
+        ));
     }
 }
 
@@ -800,6 +957,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let loop_signal = event_loop.get_signal();
     let (commands, command_channel): (calloop::channel::Sender<Command>, Channel<Command>) = channel::channel();
     let outputs_shared = Arc::new(RwLock::new(Vec::new()));
+    let audio_levels = Arc::new(RwLock::new([0.0f32; 4]));
+    audio::start_capture(audio_levels.clone());
 
     let mut state = AppState {
         layer_shell,
@@ -828,8 +987,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         paused: false,
         running: true,
         plasma_plugin: false,
+        audio_levels: audio_levels.clone(),
         active_wallpaper: None,
         active_manifest: None,
+        fullscreen_outputs: HashSet::new(),
+        pause_on_fullscreen: false,
     };
 
     WaylandSource::new(conn.clone(), event_queue).insert(event_loop.handle())?;
@@ -846,9 +1008,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     )?;
 
-    let use_plasma_plugin = plasma::is_running() && plasma::plugin_installed();
-    state.plasma_plugin = use_plasma_plugin;
-    let plasma_original = if plasma::is_running() {
+    let plasma_running = plasma::is_running();
+    state.plasma_plugin = plasma_running;
+    if plasma_running && !plasma::plugin_installed() {
+        eprintln!("warning: KDE Plasma detected but opaper plugin not installed — run 'make kde-plugin'");
+    }
+    let plasma_original = if plasma_running {
         plasma::get_wallpaper_plugin()
     } else {
         None
@@ -857,7 +1022,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(path) = wallpaper {
         state.set_wallpaper(&path, None)?;
     }
-    if use_plasma_plugin {
+    if plasma_running {
         state.sync_outputs();
     } else {
         let outputs: Vec<wl_output::WlOutput> = state.output_state.outputs().collect();
@@ -872,6 +1037,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "/org/opaper/Engine",
         EngineIface { commands: commands.clone(), outputs: outputs_shared },
     )?;
+
+    if state.plasma_plugin {
+        let audio = state.audio_levels.clone();
+        std::thread::spawn(move || {
+            let mut was_active = false;
+            loop {
+                std::thread::sleep(Duration::from_millis(66));
+                let levels = *audio.read().unwrap();
+                let active = levels[0] > 0.001;
+                if active || was_active {
+                    plasma::push_audio_levels(&levels);
+                }
+                was_active = active;
+            }
+        });
+    }
 
     while state.running {
         event_loop.dispatch(IDLE_TICK, &mut state)?;

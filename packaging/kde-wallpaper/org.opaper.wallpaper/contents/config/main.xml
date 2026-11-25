@@ -17,5 +17,13 @@
       <label>Shader parameters as JSON</label>
       <default></default>
     </entry>
+    <entry name="Paused" type="String">
+      <label>Whether wallpaper animation is paused</label>
+      <default>false</default>
+    </entry>
+    <entry name="AudioLevels" type="String">
+      <label>Audio levels from engine (level bass mid treble)</label>
+      <default></default>
+    </entry>
   </group>
 </kcfg>

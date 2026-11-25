@@ -28,6 +28,8 @@ layout(std140, binding = 0) uniform buf {
     float iFrame;
     float _pad;
     vec4 iResolution;
+    vec4 iAudio;
+    vec4 iDate;
     vec4 iP0;
     vec4 iP1;
     vec4 iP2;

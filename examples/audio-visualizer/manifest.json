@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "name": "Audio Visualizer",
+  "author": "opaper",
+  "version": "1.0.0",
+  "description": "Reactive audio bars with bass, mid and treble visualization",
+  "type": "shader",
+  "shader": "shader.frag",
+  "params": {
+    "bar_count": {
+      "type": "float",
+      "slot": 0,
+      "label": "Quantidade de barras",
+      "default": 32,
+      "min": 8,
+      "max": 64
+    },
+    "sensitivity": {
+      "type": "float",
+      "slot": 1,
+      "label": "Sensibilidade",
+      "default": 1.5,
+      "min": 0.5,
+      "max": 5.0
+    },
+    "color_bass": {
+      "type": "color",
+      "slot": 2,
+      "label": "Cor dos graves",
+      "default": "#8B5CF6"
+    },
+    "color_mid": {
+      "type": "color",
+      "slot": 3,
+      "label": "Cor dos médios",
+      "default": "#3B82F6"
+    },
+    "color_treble": {
+      "type": "color",
+      "slot": 4,
+      "label": "Cor dos agudos",
+      "default": "#06B6D4"
+    },
+    "bg_color": {
+      "type": "color",
+      "slot": 5,
+      "label": "Cor de fundo",
+      "default": "#0A0A1A"
+    }
+  }
+}

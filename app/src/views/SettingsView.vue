@@ -87,18 +87,19 @@ import { useTheme } from '../composables/useTheme'
 import SettingsCard from '../components/SettingsCard.vue'
 import ToggleRow from '../components/ToggleRow.vue'
 
-const { outputs, wallpapers, fpsLimit, setFpsLimit } = useEngine()
+const { outputs, wallpapers, fpsLimit, setFpsLimit, pauseOnFullscreen, setPauseOnFullscreen } = useEngine()
 const { theme, toggle: toggleTheme } = useTheme()
 
 const localFps = ref(fpsLimit.value)
 const autostart = ref(true)
 const trayOnClose = ref(true)
 const pauseBattery = ref(false)
-const pauseFullscreen = ref(true)
+const pauseFullscreen = ref(pauseOnFullscreen.value)
 const audioReact = ref(false)
 const mouseReact = ref(false)
 
 watch(fpsLimit, (v) => { localFps.value = v })
+watch(pauseFullscreen, (v) => { setPauseOnFullscreen(v) })
 
 function onFpsChange() {
   setFpsLimit(localFps.value)
