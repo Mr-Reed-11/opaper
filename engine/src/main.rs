@@ -57,6 +57,21 @@ enum Command {
         output: Option<String>,
         reply: std::sync::mpsc::Sender<Result<(), String>>,
     },
+    SetParam {
+        slot: u8,
+        value: [f32; 4],
+        output: Option<String>,
+    },
+    SetFpsLimit(u32),
+    GetActiveWallpaper {
+        reply: std::sync::mpsc::Sender<String>,
+    },
+    GetManifest {
+        reply: std::sync::mpsc::Sender<String>,
+    },
+    GetParams {
+        reply: std::sync::mpsc::Sender<String>,
+    },
     Pause,
     Resume,
     Quit,
@@ -98,9 +113,12 @@ struct AppState {
     start: Instant,
     last_frame: Instant,
     frame: u32,
+    fps_limit: u32,
     paused: bool,
     running: bool,
     plasma_plugin: bool,
+    active_wallpaper: Option<PathBuf>,
+    active_manifest: Option<String>,
 }
 
 fn output_name(output_state: &OutputState, output: &wl_output::WlOutput) -> String {
@@ -177,11 +195,17 @@ impl AppState {
     }
 
     fn sync_outputs(&self) {
-        let names: Vec<String> = self
-            .surfaces
-            .iter()
-            .map(|s| output_name(&self.output_state, &s.output))
-            .collect();
+        let names: Vec<String> = if self.plasma_plugin {
+            self.output_state
+                .outputs()
+                .map(|o| output_name(&self.output_state, &o))
+                .collect()
+        } else {
+            self.surfaces
+                .iter()
+                .map(|s| output_name(&self.output_state, &s.output))
+                .collect()
+        };
         *self.outputs_shared.write().unwrap() = names;
     }
 
@@ -199,6 +223,12 @@ impl AppState {
         item.layer.wl_surface().frame(&self.qh, FrameCallbackData(item.layer.wl_surface().clone()));
 
         let now = Instant::now();
+        if self.fps_limit > 0 {
+            let min_frame_time = Duration::from_secs_f64(1.0 / self.fps_limit as f64);
+            if now.duration_since(self.last_frame) < min_frame_time {
+                return;
+            }
+        }
         let delta = now.duration_since(self.last_frame);
         self.last_frame = now;
         let elapsed = now.duration_since(self.start);
@@ -269,8 +299,12 @@ impl AppState {
         );
         let params = loaded.uniforms().map_err(|e| format!("invalid params: {e}"))?;
 
-        match output {
-            Some(name) => {
+        let manifest_json = std::fs::read_to_string(path.join("manifest.json")).unwrap_or_default();
+        self.active_wallpaper = Some(path.to_path_buf());
+        self.active_manifest = Some(manifest_json);
+
+        if let Some(name) = output {
+            if !self.plasma_plugin {
                 let available: Vec<String> = self
                     .surfaces
                     .iter()
@@ -281,25 +315,26 @@ impl AppState {
                     .iter_mut()
                     .find(|surface| output_name(&self.output_state, &surface.output) == name)
                     .ok_or_else(|| format!("output not found: {name} (available: {})", available.join(", ")))?;
-                surface.pipeline = Some(pipeline);
+                surface.pipeline = Some(pipeline.clone());
                 surface.params = params;
             }
-            None => {
-                for surface in &mut self.surfaces {
-                    surface.pipeline = Some(pipeline.clone());
-                    surface.params = params;
-                }
-                self.pipeline = pipeline;
-                self.params = params;
+        }
 
-                if plasma::is_running() && plasma::plugin_installed() {
-                    let name = path.file_name().unwrap_or_default().to_string_lossy();
-                    let abs = std::fs::canonicalize(path)
-                        .unwrap_or_else(|_| path.to_path_buf())
-                        .to_string_lossy()
-                        .to_string();
-                    plasma::activate_opaper(&name, &abs, &params);
-                }
+        if output.is_none() || self.plasma_plugin {
+            for surface in &mut self.surfaces {
+                surface.pipeline = Some(pipeline.clone());
+                surface.params = params;
+            }
+            self.pipeline = pipeline;
+            self.params = params;
+
+            if plasma::is_running() && plasma::plugin_installed() {
+                let shader_name = path.file_name().unwrap_or_default().to_string_lossy();
+                let abs = std::fs::canonicalize(path)
+                    .unwrap_or_else(|_| path.to_path_buf())
+                    .to_string_lossy()
+                    .to_string();
+                plasma::activate_opaper(&shader_name, &abs, &params);
             }
         }
         Ok(())
@@ -374,6 +409,52 @@ impl EngineIface {
         self.outputs.read().unwrap().clone()
     }
 
+    fn set_param(&self, slot: u8, r: f64, g: f64, b: f64, a: f64, output: &str) -> fdo::Result<()> {
+        if slot as usize >= MAX_PARAMS {
+            return Err(fdo::Error::InvalidArgs(format!("slot must be 0..{}", MAX_PARAMS - 1)));
+        }
+        self.commands
+            .send(Command::SetParam {
+                slot,
+                value: [r as f32, g as f32, b as f32, a as f32],
+                output: if output.is_empty() { None } else { Some(output.to_owned()) },
+            })
+            .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))
+    }
+
+    fn set_fps_limit(&self, fps: u32) -> fdo::Result<()> {
+        self.commands
+            .send(Command::SetFpsLimit(fps))
+            .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))
+    }
+
+    fn get_active_wallpaper(&self) -> fdo::Result<String> {
+        let (tx, rx) = reply_channel();
+        self.commands
+            .send(Command::GetActiveWallpaper { reply: tx })
+            .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))?;
+        rx.recv_timeout(Duration::from_secs(2))
+            .map_err(|_| fdo::Error::Timeout("timed out".to_owned()))
+    }
+
+    fn get_manifest(&self) -> fdo::Result<String> {
+        let (tx, rx) = reply_channel();
+        self.commands
+            .send(Command::GetManifest { reply: tx })
+            .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))?;
+        rx.recv_timeout(Duration::from_secs(2))
+            .map_err(|_| fdo::Error::Timeout("timed out".to_owned()))
+    }
+
+    fn get_params(&self) -> fdo::Result<String> {
+        let (tx, rx) = reply_channel();
+        self.commands
+            .send(Command::GetParams { reply: tx })
+            .map_err(|_| fdo::Error::Failed("engine is stopping".to_owned()))?;
+        rx.recv_timeout(Duration::from_secs(2))
+            .map_err(|_| fdo::Error::Timeout("timed out".to_owned()))
+    }
+
     fn pause(&self) {
         let _ = self.commands.send(Command::Pause);
     }
@@ -392,6 +473,44 @@ fn handle_command(state: &mut AppState, command: Command) {
         Command::SetWallpaper { path, output, reply } => {
             let result = state.set_wallpaper(&path, output.as_deref());
             let _ = reply.send(result);
+        }
+        Command::SetParam { slot, value, output } => {
+            let idx = slot as usize;
+            match output {
+                Some(name) if !state.plasma_plugin => {
+                    if let Some(surface) = state.surfaces.iter_mut().find(|s| {
+                        output_name(&state.output_state, &s.output) == name
+                    }) {
+                        surface.params[idx] = value;
+                    }
+                }
+                _ => {
+                    state.params[idx] = value;
+                    for surface in &mut state.surfaces {
+                        surface.params[idx] = value;
+                    }
+                }
+            }
+            if state.plasma_plugin {
+                plasma::update_params(&state.params);
+            }
+        }
+        Command::SetFpsLimit(fps) => state.fps_limit = fps,
+        Command::GetActiveWallpaper { reply } => {
+            let path = state
+                .active_wallpaper
+                .as_ref()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let _ = reply.send(path);
+        }
+        Command::GetManifest { reply } => {
+            let manifest = state.active_manifest.clone().unwrap_or_default();
+            let _ = reply.send(manifest);
+        }
+        Command::GetParams { reply } => {
+            let params_json = serde_json::to_string(&state.params).unwrap_or_default();
+            let _ = reply.send(params_json);
         }
         Command::Pause => state.paused = true,
         Command::Resume => state.paused = false,
@@ -567,8 +686,8 @@ mod plasma {
         eval(&script);
     }
 
-    pub fn activate_opaper(shader_name: &str, wallpaper_path: &str, params: &[[f32; 4]; 8]) {
-        let params_json = format!(
+    fn params_json(params: &[[f32; 4]; 8]) -> String {
+        format!(
             "[[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}],[{},{},{},{}]]",
             params[0][0], params[0][1], params[0][2], params[0][3],
             params[1][0], params[1][1], params[1][2], params[1][3],
@@ -578,7 +697,11 @@ mod plasma {
             params[5][0], params[5][1], params[5][2], params[5][3],
             params[6][0], params[6][1], params[6][2], params[6][3],
             params[7][0], params[7][1], params[7][2], params[7][3],
-        );
+        )
+    }
+
+    pub fn activate_opaper(shader_name: &str, wallpaper_path: &str, params: &[[f32; 4]; 8]) {
+        let pj = params_json(params);
         let script = format!(
             "var d = desktops(); \
              for (var i = 0; i < d.length; i++) {{ \
@@ -586,7 +709,19 @@ mod plasma {
                  d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
                  d[i].writeConfig('ShaderName', '{shader_name}'); \
                  d[i].writeConfig('WallpaperPath', '{wallpaper_path}'); \
-                 d[i].writeConfig('Params', '{params_json}'); \
+                 d[i].writeConfig('Params', '{pj}'); \
+             }}"
+        );
+        eval(&script);
+    }
+
+    pub fn update_params(params: &[[f32; 4]; 8]) {
+        let pj = params_json(params);
+        let script = format!(
+            "var d = desktops(); \
+             for (var i = 0; i < d.length; i++) {{ \
+                 d[i].currentConfigGroup = ['Wallpaper', 'org.opaper.wallpaper', 'General']; \
+                 d[i].writeConfig('Params', '{pj}'); \
              }}"
         );
         eval(&script);
@@ -598,6 +733,10 @@ mod plasma {
             "{home}/.local/share/plasma/wallpapers/org.opaper.wallpaper/metadata.json"
         ))
         .exists()
+            || std::path::Path::new(
+                "/usr/share/plasma/wallpapers/org.opaper.wallpaper/metadata.json",
+            )
+            .exists()
     }
 }
 
@@ -685,9 +824,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         start: Instant::now(),
         last_frame: Instant::now(),
         frame: 0,
+        fps_limit: 60,
         paused: false,
         running: true,
         plasma_plugin: false,
+        active_wallpaper: None,
+        active_manifest: None,
     };
 
     WaylandSource::new(conn.clone(), event_queue).insert(event_loop.handle())?;
@@ -715,7 +857,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(path) = wallpaper {
         state.set_wallpaper(&path, None)?;
     }
-    if !use_plasma_plugin {
+    if use_plasma_plugin {
+        state.sync_outputs();
+    } else {
         let outputs: Vec<wl_output::WlOutput> = state.output_state.outputs().collect();
         for output in outputs {
             state.add_output(&conn, output);

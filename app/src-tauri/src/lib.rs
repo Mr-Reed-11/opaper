@@ -21,6 +21,11 @@ use zbus::{blocking::Connection, proxy};
 trait Engine {
     fn set_wallpaper(&self, path: &str) -> zbus::Result<()>;
     fn set_wallpaper_on_output(&self, path: &str, output: &str) -> zbus::Result<()>;
+    fn set_param(&self, slot: u8, r: f64, g: f64, b: f64, a: f64, output: &str) -> zbus::Result<()>;
+    fn set_fps_limit(&self, fps: u32) -> zbus::Result<()>;
+    fn get_active_wallpaper(&self) -> zbus::Result<String>;
+    fn get_manifest(&self) -> zbus::Result<String>;
+    fn get_params(&self) -> zbus::Result<String>;
     fn list_outputs(&self) -> zbus::Result<Vec<String>>;
     fn pause(&self) -> zbus::Result<()>;
     fn resume(&self) -> zbus::Result<()>;
@@ -44,6 +49,31 @@ fn set_wallpaper(path: String, output: Option<String>) -> Result<(), String> {
         Some(output) => engine.set_wallpaper_on_output(&path, output),
         None => engine.set_wallpaper(&path),
     })
+}
+
+#[tauri::command]
+fn set_param(slot: u8, r: f64, g: f64, b: f64, a: f64, output: Option<String>) -> Result<(), String> {
+    with_engine(|engine| engine.set_param(slot, r, g, b, a, output.as_deref().unwrap_or("")))
+}
+
+#[tauri::command]
+fn set_fps_limit(fps: u32) -> Result<(), String> {
+    with_engine(|engine| engine.set_fps_limit(fps))
+}
+
+#[tauri::command]
+fn get_active_wallpaper() -> Result<String, String> {
+    with_engine(|engine| engine.get_active_wallpaper())
+}
+
+#[tauri::command]
+fn get_manifest() -> Result<String, String> {
+    with_engine(|engine| engine.get_manifest())
+}
+
+#[tauri::command]
+fn get_params() -> Result<String, String> {
+    with_engine(|engine| engine.get_params())
 }
 
 #[tauri::command]
@@ -127,6 +157,13 @@ fn list_wallpapers() -> Vec<WallpaperInfo> {
     all
 }
 
+#[tauri::command]
+fn read_manifest(path: String) -> Result<String, String> {
+    let manifest_path = Path::new(&path).join("manifest.json");
+    std::fs::read_to_string(&manifest_path)
+        .map_err(|e| format!("cannot read manifest: {e}"))
+}
+
 fn stop_engine() {
     let _ = with_engine(|engine| engine.quit());
 }
@@ -142,7 +179,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_outputs,
             list_wallpapers,
+            read_manifest,
             set_wallpaper,
+            set_param,
+            set_fps_limit,
+            get_active_wallpaper,
+            get_manifest,
+            get_params,
             pause,
             resume,
             quit,

@@ -1,0 +1,170 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Comunidade.dc.html": {
+      "h": 800,
+      "title": "Pesquisar wallpapers",
+      "w": 1280,
+      "x": 1820,
+      "y": 0
+    },
+    "Library-PB.dc.html": {
+      "h": 800,
+      "title": "Biblioteca · Preto e branco",
+      "w": 1280,
+      "x": 0,
+      "y": 1720
+    },
+    "Configuracoes.dc.html": {
+      "h": 800,
+      "title": "Configurações",
+      "w": 1280,
+      "x": 1820,
+      "y": 880
+    },
+    "Library.dc.html": {
+      "h": 800,
+      "title": "Biblioteca",
+      "w": 1280,
+      "x": 0,
+      "y": 880
+    },
+    "Main.dc.html": {
+      "h": 760,
+      "title": "Marca e sistema",
+      "w": 1200,
+      "x": 0,
+      "y": 0
+    },
+    "Tray.dc.html": {
+      "h": 320,
+      "title": "Bandeja",
+      "w": 340,
+      "x": 1400,
+      "y": 880
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-24T05:33:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "noteOrder": [
+    "note-1pfl6o",
+    "note-pg1ddb",
+    "note-vcafu9",
+    "note-j1mo2d",
+    "note-pu1yjv",
+    "note-xyg4dg",
+    "note-jkorji",
+    "note-5finpa",
+    "note-cywq3w",
+    "note-2f6zr3"
+  ],
+  "notes": {
+    "note-1pfl6o": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1461,
+      "y": 500
+    },
+    "note-2f6zr3": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1310,
+      "y": 469
+    },
+    "note-5finpa": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1572,
+      "y": 2230
+    },
+    "note-cywq3w": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1283,
+      "y": 1308
+    },
+    "note-j1mo2d": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1890,
+      "y": 1878
+    },
+    "note-jkorji": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1434,
+      "y": 1792
+    },
+    "note-pg1ddb": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1975,
+      "y": 1346
+    },
+    "note-pu1yjv": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1816,
+      "y": 1895
+    },
+    "note-vcafu9": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 2443,
+      "y": 1791
+    },
+    "note-xyg4dg": {
+      "bold": false,
+      "kind": "title1",
+      "size": 24,
+      "text": "oitmo qnd",
+      "w": 240,
+      "x": 1629,
+      "y": 1548
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Library.dc.html",
+    "Tray.dc.html",
+    "Comunidade.dc.html",
+    "Configuracoes.dc.html",
+    "Library-PB.dc.html"
+  ],
+  "pages": [],
+  "title": "opaper — identidade"
+}

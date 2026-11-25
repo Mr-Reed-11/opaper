@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>opaper — bandeja</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position:relative;overflow:hidden;width:300px;height:260px;box-sizing:border-box;background:#0E1640;padding:20px;font-family:Inter,system-ui,sans-serif">
+  <div style="position:absolute;left:150px;top:-80px;width:220px;height:220px;border-radius:50%;background:#3B82F6;opacity:0.5;filter:blur(70px)"></div>
+  <div style="position:absolute;left:-60px;top:120px;width:220px;height:220px;border-radius:50%;background:#8B5CF6;opacity:0.5;filter:blur(70px)"></div>
+  <div style="position:relative;box-sizing:border-box;padding:8px;background:rgba(255,255,255,0.1);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,0.22);border-radius:16px;box-shadow:0 12px 40px rgba(5,8,30,0.45), inset 0 1px 0 rgba(255,255,255,0.25);color:#EEF1FF;display:flex;flex-direction:column;gap:4px">
+    <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px">
+      <div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:16px">opaper</div>
+      <div style="font-size:13px;color:#C5CCF0">Ativo · Mar de lavanda em DP-1</div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.18)"></div>
+    <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+      Abrir biblioteca
+    </div>
+    <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="2" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+      Pausar
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.18)"></div>
+    <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px;color:#BFDBFE">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BFDBFE" stroke-width="2" aria-hidden="true"><path d="M12 2v10"></path><path d="M18.4 6.6a9 9 0 1 1-12.8 0"></path></svg>
+      Sair
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":300,"height":260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

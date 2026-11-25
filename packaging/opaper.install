@@ -1,0 +1,8 @@
+pre_remove() {
+    # Restore default wallpaper plugin before removing opaper
+    if command -v qdbus6 >/dev/null 2>&1; then
+        qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript \
+            "var d = desktops(); for (var i = 0; i < d.length; i++) { d[i].wallpaperPlugin = 'org.kde.image'; }" \
+            2>/dev/null || true
+    fi
+}

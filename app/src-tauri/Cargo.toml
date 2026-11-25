@@ -8,6 +8,10 @@ edition = "2024"
 name = "opaper_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# Production builds must embed the frontend instead of loading devUrl.
+custom-protocol = ["tauri/custom-protocol"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

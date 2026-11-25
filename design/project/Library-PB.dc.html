@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>opaper — biblioteca (preto e branco)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position:relative;overflow:hidden;width:1280px;height:800px;box-sizing:border-box;background:#000000;color:#EEF1FF;font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="position:absolute;left:880px;top:-160px;width:520px;height:520px;border-radius:50%;background:#8C8C8C;opacity:0.45;filter:blur(110px)"></div>
+  <div style="position:absolute;left:260px;top:520px;width:560px;height:460px;border-radius:50%;background:#5A5A5A;opacity:0.45;filter:blur(120px)"></div>
+
+  <div style="position:relative;height:56px;box-sizing:border-box;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid rgba(255,255,255,0.14)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true" style="flex-shrink:0">
+        <rect x="6" y="6" width="1012" height="1012" rx="226" fill="#000000" stroke="#2E2E2E" stroke-width="24"></rect>
+        <g transform="translate(32 32)">
+          <rect x="200" y="200" width="380" height="380" rx="84" fill="#8C8C8C" fill-opacity="0.6"></rect>
+          <rect x="290" y="290" width="380" height="380" rx="84" fill="#5A5A5A" fill-opacity="0.6"></rect>
+          <rect x="380" y="380" width="380" height="380" rx="84" fill="#FFFFFF" fill-opacity="0.85"></rect>
+        </g>
+      </svg>
+      <div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.02em">opaper</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div style="width:300px;height:36px;box-sizing:border-box;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);padding:0 12px;display:flex;align-items:center;color:#D4D4D4;font-size:15px">Buscar na biblioteca</div>
+      <div aria-label="Baixados" style="width:36px;height:36px;box-sizing:border-box;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="2" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
+      </div>
+      <button style="height:36px;padding:0 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(90,90,90,0.9);color:#EEF1FF;font-weight:600;font-size:15px;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,0.3)">Criar wallpaper</button>
+    </div>
+  </div>
+
+  <div style="position:relative;flex:1;display:flex;min-height:0">
+    <div style="width:232px;box-sizing:border-box;padding:24px 16px;background:rgba(255,255,255,0.06);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-right:1px solid rgba(255,255,255,0.14);display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#A3A3A3;padding:0 12px 8px">Menu</div>
+      <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+        Todos
+      </div>
+      <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px;color:#D4D4D4">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4D4D4" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        Pesquisar wallpapers
+      </div>
+      <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px;color:#D4D4D4">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4D4D4" stroke-width="2" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        Meus wallpapers
+      </div>
+      <div style="height:40px;box-sizing:border-box;padding:0 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-size:15px;color:#D4D4D4">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4D4D4" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
+        Configurações
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;box-sizing:border-box;padding:24px;display:flex;flex-direction:column;gap:20px">
+      <div role="radiogroup" aria-label="Monitor de destino" style="display:flex;align-items:center;gap:12px;padding:8px;box-sizing:border-box;align-self:flex-start;border-radius:14px;background:rgba(255,255,255,0.08);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.2)">
+        <span style="padding:0 8px 0 6px;font-size:13px;color:#A3A3A3">Aplicar em</span>
+        <span role="radio" aria-checked="true" style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:10px;background:rgba(90,90,90,0.9);border:1px solid rgba(255,255,255,0.3);box-shadow:inset 0 1px 0 rgba(255,255,255,0.3);font-size:14px;font-weight:600">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+          DP-1 · 1920×1080
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EEF1FF" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+        </span>
+        <span role="radio" aria-checked="false" style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);font-size:14px;color:#D4D4D4">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4D4D4" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+          HDMI-1 · 2560×1440
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:32px;letter-spacing:-0.02em">Wallpapers</div>
+        <div style="font-size:15px;color:#D4D4D4">6 itens · Monitor DP-1 em uso</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border-radius:18px;background:rgba(255,255,255,0.1);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:2px solid rgba(255,255,255,0.9);box-shadow:0 8px 32px rgba(5,8,30,0.35), inset 0 1px 0 rgba(255,255,255,0.2)">
+          <div style="height:130px;border-radius:12px;background:#5A5A5A;position:relative"><span style="position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);color:#EEF1FF;font-size:12px;font-weight:600">Cena · Parallax</span></div>
+          <div style="font-size:16px;font-weight:600">Mar de lavanda</div>
+          <div style="font-size:14px;color:#D4D4D4">por você · 1920×1080 · em uso</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border-radius:18px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);box-shadow:0 8px 32px rgba(5,8,30,0.35), inset 0 1px 0 rgba(255,255,255,0.2)">
+          <div style="height:130px;border-radius:12px;background:#8C8C8C;position:relative"><span style="position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);color:#EEF1FF;font-size:12px;font-weight:600">Shader</span></div>
+          <div style="font-size:16px;font-weight:600">Ondas de tinta</div>
+          <div style="font-size:14px;color:#D4D4D4">comunidade · 2560×1440</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border-radius:18px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);box-shadow:0 8px 32px rgba(5,8,30,0.35), inset 0 1px 0 rgba(255,255,255,0.2)">
+          <div style="height:130px;border-radius:12px;background:#2E2E2E;position:relative"><span style="position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);color:#EEF1FF;font-size:12px;font-weight:600">Cena · Cabelo</span></div>
+          <div style="font-size:16px;font-weight:600">Vento na janela</div>
+          <div style="font-size:14px;color:#D4D4D4">comunidade · 2560×1440</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border-radius:18px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);box-shadow:0 8px 32px rgba(5,8,30,0.35), inset 0 1px 0 rgba(255,255,255,0.2)">
+          <div style="height:130px;border-radius:12px;background:#FFFFFF;position:relative"><span style="position:absolute;left:10px;bottom:10px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.2);color:#EEF1FF;font-size:12px;font-weight:600">Shader</span></div>
+          <div style="font-size:16px;font-weight:600">Grade noturna</div>
+          <div style="font-size:14px;color:#D4D4D4">por você · 1920×1080</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:300px;box-sizing:border-box;padding:20px;background:rgba(255,255,255,0.08);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border-left:1px solid rgba(255,255,255,0.16);display:flex;flex-direction:column;gap:16px;overflow:hidden">
+      <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#A3A3A3">Opções do wallpaper</div>
+      <div style="font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:20px">Mar de lavanda</div>
+
+      <div style="font-size:12px;color:#A3A3A3;margin-top:4px">Exibir sobre o wallpaper</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:15px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span>Relógio</span><span role="switch" aria-checked="true" style="width:40px;height:22px;box-sizing:border-box;border-radius:999px;background:#5A5A5A;position:relative;display:inline-block"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#EEF1FF"></span></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span>Informações do sistema</span><span role="switch" aria-checked="true" style="width:40px;height:22px;box-sizing:border-box;border-radius:999px;background:#5A5A5A;position:relative;display:inline-block"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#EEF1FF"></span></span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:2px">
+          <span style="padding:4px 10px;border-radius:999px;background:rgba(90,90,90,0.9);font-size:12px;font-weight:600">CPU</span>
+          <span style="padding:4px 10px;border-radius:999px;background:rgba(90,90,90,0.9);font-size:12px;font-weight:600">RAM</span>
+          <span style="padding:4px 10px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);font-size:12px">GPU</span>
+          <span style="padding:4px 10px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);font-size:12px">Rede</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span>Data</span><span role="switch" aria-checked="false" style="width:40px;height:22px;box-sizing:border-box;border-radius:999px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);position:relative;display:inline-block"><span style="position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#D4D4D4"></span></span></div>
+      </div>
+
+      <div style="font-size:12px;color:#A3A3A3;margin-top:4px">Cor predominante</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="width:28px;height:28px;border-radius:8px;background:#5A5A5A;border:2px solid #EEF1FF"></span>
+        <span style="width:28px;height:28px;border-radius:8px;background:#FFFFFF"></span>
+        <span style="width:28px;height:28px;border-radius:8px;background:#8C8C8C"></span>
+        <span style="width:28px;height:28px;border-radius:8px;background:#000000;box-shadow:inset 0 0 0 1px #2E2E2E"></span>
+        <span style="font-size:13px;color:#D4D4D4;margin-left:4px">#5A5A5A</span>
+      </div>
+
+      <div style="font-size:12px;color:#A3A3A3;margin-top:4px">Desempenho</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:15px">
+        <div style="display:flex;justify-content:space-between"><span>Limite de FPS</span><span style="color:#D4D4D4">60</span></div>
+        <div style="height:6px;border-radius:999px;background:rgba(255,255,255,0.14);position:relative"><div style="position:absolute;left:0;top:0;height:6px;width:75%;border-radius:999px;background:#5A5A5A"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span>Pausar com janela cheia</span><span role="switch" aria-checked="true" style="width:40px;height:22px;box-sizing:border-box;border-radius:999px;background:#5A5A5A;position:relative;display:inline-block"><span style="position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#EEF1FF"></span></span></div>
+      </div>
+
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+        <button style="height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(90,90,90,0.9);color:#EEF1FF;font-weight:600;font-size:15px;font-family:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,0.3)">Aplicar no DP-1</button>
+        <button style="height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#EEF1FF;font-size:15px;font-family:inherit">Restaurar padrão</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:relative;height:36px;box-sizing:border-box;padding:0 24px;background:rgba(255,255,255,0.06);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-top:1px solid rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#D4D4D4">
+    <span>Plasma 6 · Wayland · engine conectada</span>
+    <span>Clique em um wallpaper para ver as opções</span>
+  </div>
+<p style="margin: 0; position: absolute; left: 594px; top: 586px">oitmo qnd</p><p style="margin: 0; position: absolute; left: 600px; top: 390px">oitmo qnd</p><p style="margin: 0; position: absolute; left: 624px; top: 414px">oitmo qnd</p></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

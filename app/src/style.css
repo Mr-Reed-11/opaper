@@ -1,13 +1,113 @@
 @import "tailwindcss";
 
-:root {
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v18/UcCo3FwrK3iLTcviYwY.woff2') format('woff2');
+}
+
+:root,
+[data-theme="blue"] {
+  --bg-base: #0E1640;
+  --bg-glow-1: #3B82F6;
+  --bg-glow-2: #8B5CF6;
+  --accent: #8B5CF6;
+  --accent-hover: rgba(139, 92, 246, 0.75);
+  --brand-blue: #3B82F6;
+  --brand-lavender: #C4B5FD;
+  --text-primary: #EEF1FF;
+  --text-secondary: #C5CCF0;
+  --text-muted: #9AA6D6;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --glass-bg-active: rgba(255, 255, 255, 0.14);
+  --glass-border-active: rgba(255, 255, 255, 0.2);
+  --switch-on: #8B5CF6;
+  --switch-off-bg: rgba(255, 255, 255, 0.12);
+  --switch-off-border: rgba(255, 255, 255, 0.2);
+  --logo-bg: #0E1640;
+  --logo-stroke: #2D3A8C;
+  --logo-rect-1: #3B82F6;
+  --logo-rect-2: #8B5CF6;
+  --logo-rect-3: #C4B5FD;
   color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-theme="mono"] {
+  --bg-base: #000000;
+  --bg-glow-1: #8C8C8C;
+  --bg-glow-2: #5A5A5A;
+  --accent: #5A5A5A;
+  --accent-hover: rgba(90, 90, 90, 0.9);
+  --brand-blue: #8C8C8C;
+  --brand-lavender: #FFFFFF;
+  --text-primary: #EEF1FF;
+  --text-secondary: #D4D4D4;
+  --text-muted: #A3A3A3;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --glass-bg-active: rgba(255, 255, 255, 0.14);
+  --glass-border-active: rgba(255, 255, 255, 0.2);
+  --switch-on: #5A5A5A;
+  --switch-off-bg: rgba(255, 255, 255, 0.12);
+  --switch-off-border: rgba(255, 255, 255, 0.2);
+  --logo-bg: #000000;
+  --logo-stroke: #2E2E2E;
+  --logo-rect-1: #8C8C8C;
+  --logo-rect-2: #5A5A5A;
+  --logo-rect-3: #FFFFFF;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #0b0e16;
-  color: #e6e9f5;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-shadow {
+  box-shadow: 0 8px 32px rgba(5, 8, 30, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-active {
+  background: var(--glass-bg-active);
+  border-color: var(--glass-border-active);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

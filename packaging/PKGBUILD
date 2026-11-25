@@ -14,6 +14,7 @@ depends=(
     'libayatana-appindicator'
     'vulkan-icd-loader'
 )
+install=opaper.install
 makedepends=(
     'rust'
     'cargo'
@@ -21,24 +22,35 @@ makedepends=(
     'npm'
     'pkg-config'
     'wayland-protocols'
-)
-optdepends=(
-    'qt6-shadertools: KDE Plasma wallpaper plugin (qsb compiler)'
+    'qt6-shadertools'
 )
 
 build() {
     cd "$startdir/.."
-    export CARGO_TARGET_DIR="$srcdir/target"
-    cargo build --release --manifest-path engine/Cargo.toml
-    cd app && npm install && npm run build && cd ..
-    cargo build --release --manifest-path app/src-tauri/Cargo.toml
+
+    CFLAGS="$(printf %s "$CFLAGS" | sed -E 's/[[:space:]]*-flto[^[:space:]]*//g')"
+    CXXFLAGS="$(printf %s "$CXXFLAGS" | sed -E 's/[[:space:]]*-flto[^[:space:]]*//g')"
+    LDFLAGS="$(printf %s "$LDFLAGS" | sed -E 's/[[:space:]]*-flto[^[:space:]]*//g')"
+    export CFLAGS CXXFLAGS LDFLAGS
+
+    rm -rf "$srcdir/target-engine" "$srcdir/target-app"
+
+    CARGO_TARGET_DIR="$srcdir/target-engine" \
+        cargo build --release --manifest-path engine/Cargo.toml
+    (cd app && npm install && npm run build)
+    CARGO_TARGET_DIR="$srcdir/target-app" \
+        cargo build --release --manifest-path app/src-tauri/Cargo.toml \
+        --features custom-protocol
+
+    # Build KDE Plasma plugin shaders
+    bash packaging/kde-wallpaper/build.sh
 }
 
 package() {
     cd "$startdir/.."
-    install -Dm755 "$srcdir/target/release/opaper-engine" "$pkgdir/usr/bin/opaper-engine"
-    install -Dm755 "$srcdir/target/release/opaper"        "$pkgdir/usr/bin/opaper"
-    install -Dm755 packaging/opaper-launch                 "$pkgdir/usr/bin/opaper-launch"
+    install -Dm755 "$srcdir/target-engine/release/opaper-engine" "$pkgdir/usr/bin/opaper-engine"
+    install -Dm755 "$srcdir/target-app/release/opaper"           "$pkgdir/usr/bin/opaper"
+    install -Dm755 packaging/opaper-launch                       "$pkgdir/usr/bin/opaper-launch"
 
     install -Dm644 packaging/br.com.nortixcode.opaper.desktop \
         "$pkgdir/usr/share/applications/opaper.desktop"
@@ -49,9 +61,21 @@ package() {
     install -Dm644 app/src-tauri/icons/128x128@2x.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/opaper.png"
     install -Dm644 app/src-tauri/icons/icon.png       "$pkgdir/usr/share/icons/hicolor/512x512/apps/opaper.png"
 
+    # Examples
     for dir in examples/*/; do
         name=$(basename "$dir")
         install -Dm644 "$dir/manifest.json" "$pkgdir/usr/share/opaper/examples/$name/manifest.json"
         install -Dm644 "$dir/shader.frag"   "$pkgdir/usr/share/opaper/examples/$name/shader.frag"
+    done
+
+    # KDE Plasma wallpaper plugin
+    local plugin_src="packaging/kde-wallpaper/org.opaper.wallpaper"
+    local plugin_dst="$pkgdir/usr/share/plasma/wallpapers/org.opaper.wallpaper"
+
+    install -Dm644 "$plugin_src/metadata.json"             "$plugin_dst/metadata.json"
+    install -Dm644 "$plugin_src/contents/config/main.xml"  "$plugin_dst/contents/config/main.xml"
+    install -Dm644 "$plugin_src/contents/ui/main.qml"      "$plugin_dst/contents/ui/main.qml"
+    for qsb in "$plugin_src"/contents/shaders/*.qsb; do
+        install -Dm644 "$qsb" "$plugin_dst/contents/shaders/$(basename "$qsb")"
     done
 }
